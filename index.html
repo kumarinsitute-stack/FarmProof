@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>FarmProof - PMFBY Crop Loss Verification & Insurance Portal</title>
+    <meta name="description" content="Official PMFBY 72-hour crop loss declaration, geotagged evidence capture, and insurance claim verification portal." />
+    <meta property="og:title" content="FarmProof - PMFBY Crop Loss Verification & Insurance Portal" />
+    <meta property="og:description" content="Official PMFBY 72-hour crop loss declaration, geotagged evidence capture, and insurance claim verification portal." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  </head>
+  <body class="bg-slate-100 text-slate-800 antialiased selection:bg-emerald-600 selection:text-white">
+    <div id="root">
+      <div style="min-height: 100vh; display: flex; flex-direction: column; background-color: #f8fafc; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;">
+        <!-- Official Government Tricolor Strip -->
+        <div style="height: 6px; width: 100%; display: flex;">
+          <div style="height: 100%; width: 33.33%; background-color: #FF9933;"></div>
+          <div style="height: 100%; width: 33.33%; background-color: #ffffff; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;"></div>
+          <div style="height: 100%; width: 33.33%; background-color: #138808;"></div>
+        </div>
+        <!-- Government Header Shell -->
+        <div style="background-color: #ffffff; padding: 14px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #166534; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 14px;">
+              PMFBY
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 18px; color: #0f172a; line-height: 1.2;">FarmProof</div>
+              <div style="font-size: 11px; color: #64748b; font-weight: 500;">Pradhan Mantri Fasal Bima Yojana • Department of Agriculture & Farmers Welfare</div>
+            </div>
+          </div>
+          <div style="font-size: 12px; font-weight: 600; color: #166534;">
+            Kisan Helpline: 14447
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
