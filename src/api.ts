@@ -241,6 +241,25 @@ export const api = {
     });
   },
 
+  async uploadBase64(dataUrl: string, filename: string, mimeType: string = 'image/jpeg'): Promise<{ url: string; name: string; size: string; type: string }> {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: filename,
+        type: mimeType,
+        data: dataUrl
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Upload failed');
+    }
+
+    return res.json();
+  },
+
   async getNotifications(): Promise<AppNotification[]> {
     const res = await fetch('/api/notifications', {
       headers: this.getHeaders()
@@ -259,5 +278,23 @@ export const api = {
     } catch {
       // ignore
     }
+  },
+
+  async getInstitutionalUsageReport(): Promise<any> {
+    const res = await fetch('/api/institution/usage-report', {
+      headers: this.getHeaders()
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to load institutional usage report');
+    }
+    return res.json();
+  },
+
+  async resetDatabaseForTesting(): Promise<void> {
+    await fetch('/api/test/reset-db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 };

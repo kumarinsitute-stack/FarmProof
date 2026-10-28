@@ -1,93 +1,134 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { CapturedPhoto } from '../types';
-import { 
-  Camera, X, RefreshCw, Check, RotateCcw, AlertTriangle, 
-  SwitchCamera, ShieldCheck, CheckCircle2, UploadCloud, Info
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { CapturedPhoto } from "../types";
+import {
+  StatutorySlotDefinition,
+  analyzeImageQuality,
+  computeImageHash,
+  generateWatermarkedDerivative,
+  PhotoQualityResult,
+} from "../services/evidenceKit";
+import {
+  Camera,
+  X,
+  RefreshCw,
+  Check,
+  RotateCcw,
+  AlertTriangle,
+  SwitchCamera,
+  ShieldCheck,
+  CheckCircle2,
+  UploadCloud,
+  Info,
+  AlertCircle,
+} from "lucide-react";
 
 interface DirectCameraModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPhotoUploaded: (photo: CapturedPhoto) => void;
-  currentPhotoCount: number;
-  currentGps?: string;
-  gpsAccuracy?: number;
+  targetSlot: StatutorySlotDefinition;
+  existingSlotPhoto?: CapturedPhoto;
+  existingPhotos?: CapturedPhoto[];
+  currentGps?: { lat: number; lng: number; accuracy: number } | null;
 }
 
 export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
   isOpen,
   onClose,
   onPhotoUploaded,
-  currentPhotoCount,
+  targetSlot,
+  existingSlotPhoto,
+  existingPhotos = [],
   currentGps,
-  gpsAccuracy
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [facingMode, setFacingMode] = useState<"environment" | "user">(
+    "environment",
+  );
   const [cameraLoading, setCameraLoading] = useState<boolean>(true);
-  const [cameraError, setCameraError] = useState<{ title: string; message: string; instruction: string } | null>(null);
-  
+  const [cameraError, setCameraError] = useState<{
+    title: string;
+    message: string;
+    instruction: string;
+  } | null>(null);
+
   // Snapshot preview state
-  const [snapshotUrl, setSnapshotUrl] = useState<string | null>(null);
+  const [originalSnapshotUrl, setOriginalSnapshotUrl] = useState<string | null>(
+    null,
+  );
+  const [watermarkedSnapshotUrl, setWatermarkedSnapshotUrl] = useState<
+    string | null
+  >(null);
+  const [snapshotHash, setSnapshotHash] = useState<string | null>(null);
+  const [qualityResult, setQualityResult] = useState<PhotoQualityResult | null>(
+    null,
+  );
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState<string | null>(null);
   const [hasMultipleCameras, setHasMultipleCameras] = useState<boolean>(false);
 
-  // Stop all camera media tracks
+  // Stop all camera media tracks cleanly
   const stopTracks = (mediaStream: MediaStream | null) => {
     if (mediaStream) {
       mediaStream.getTracks().forEach((track) => {
         try {
           track.stop();
         } catch (e) {
-          console.warn('Track stop warning:', e);
+          console.warn("Track stop warning:", e);
         }
       });
     }
   };
 
-  // Start the device camera stream directly
-  const startCamera = async (mode: 'environment' | 'user' = facingMode) => {
+  // Start the device camera stream directly with rear camera preference
+  const startCamera = async (mode: "environment" | "user" = facingMode) => {
     setCameraLoading(true);
     setCameraError(null);
     setUploadSuccessMsg(null);
+    setDuplicateError(null);
 
     // Stop any existing stream before starting new one
     stopTracks(stream);
     setStream(null);
 
     // Check mediaDevices support
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
       setCameraLoading(false);
       setCameraError({
-        title: 'Camera API Unsupported',
-        message: 'Your browser or current connection does not support the HTML5 MediaDevices Camera API.',
-        instruction: 'Direct camera access requires a secure origin (HTTPS or localhost) in modern mobile or desktop browsers (Chrome, Edge, Safari, Firefox).'
+        title: "Camera Hardware API Unsupported",
+        message:
+          "Your browser or current connection does not support the MediaDevices Camera API.",
+        instruction:
+          "Direct live camera access requires HTTPS or localhost in modern mobile and desktop browsers.",
       });
       return;
     }
 
     try {
-      // Check available video devices
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        const videoDevices = devices.filter((d) => d.kind === "videoinput");
         setHasMultipleCameras(videoDevices.length > 1);
       } catch {
         // ignore device enumeration failure
       }
 
-      // Request live camera stream with rear facing preference on mobile
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: mode },
           width: { ideal: 1920, min: 640 },
-          height: { ideal: 1080, min: 480 }
+          height: { ideal: 1080, min: 480 },
         },
-        audio: false
+        audio: false,
       });
 
       setStream(mediaStream);
@@ -100,22 +141,35 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
       setCameraLoading(false);
     } catch (err: any) {
       setCameraLoading(false);
-      let title = 'Camera Access Denied';
-      let message = 'Could not start live device camera stream.';
-      let instruction = 'Please allow camera permission in your browser address bar.';
+      let title = "Camera Access Denied";
+      let message = "Could not start live device camera stream.";
+      let instruction =
+        "Please allow camera permission in your browser address bar.";
 
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        title = 'Camera Permission Blocked';
-        message = 'Camera permission was denied or blocked by your browser.';
-        instruction = 'To enable camera: Click the lock or site settings icon in your browser address bar, set Camera to "Allow", and click "Retry Camera" below.';
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        title = 'No Camera Hardware Detected';
-        message = 'No optical camera device was found on this system.';
-        instruction = 'Please connect an external USB webcam or access FarmProof on a mobile device with an integrated camera.';
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        title = 'Camera Hardware In Use';
-        message = 'The device camera is currently in use by another application or browser tab.';
-        instruction = 'Please close any other apps (Zoom, Teams, Camera app) or browser tabs using your camera and click "Retry Camera".';
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
+        title = "Camera Permission Blocked";
+        message =
+          "Camera permission was denied or blocked by your browser settings.";
+        instruction: 'Desktop: Click the padlock (🔒) icon in your browser address bar and set Camera to "Allow". Mobile: Open Chrome Menu > Settings > Site settings > Camera > Allow.';
+      } else if (
+        err.name === "NotFoundError" ||
+        err.name === "DevicesNotFoundError"
+      ) {
+        title = "No Optical Camera Detected";
+        message: "No video capture hardware was detected on this device.";
+        instruction: "Please connect a USB webcam or access FarmProof on a mobile smartphone with an integrated camera.";
+      } else if (
+        err.name === "NotReadableError" ||
+        err.name === "TrackStartError"
+      ) {
+        title = "Camera In Use By Another Application";
+        message =
+          "The device camera is currently locked by another application or background process.";
+        instruction =
+          'Close other camera applications (Teams, Zoom, WhatsApp) and click "Retry Camera".';
       } else {
         message = err.message || message;
       }
@@ -124,9 +178,8 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
     }
   };
 
-  // Switch between front and rear cameras
   const toggleFacing = () => {
-    const nextMode = facingMode === 'environment' ? 'user' : 'environment';
+    const nextMode = facingMode === "environment" ? "user" : "environment";
     setFacingMode(nextMode);
     startCamera(nextMode);
   };
@@ -134,12 +187,17 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
   // Initialize camera when modal opens
   useEffect(() => {
     if (isOpen) {
-      setSnapshotUrl(null);
+      setOriginalSnapshotUrl(null);
+      setWatermarkedSnapshotUrl(null);
+      setQualityResult(null);
+      setDuplicateError(null);
       startCamera(facingMode);
     } else {
       stopTracks(stream);
       setStream(null);
-      setSnapshotUrl(null);
+      setOriginalSnapshotUrl(null);
+      setWatermarkedSnapshotUrl(null);
+      setQualityResult(null);
     }
 
     return () => {
@@ -157,27 +215,63 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
 
     let canvas = canvasRef.current;
     if (!canvas) {
-      canvas = document.createElement('canvas');
+      canvas = document.createElement("canvas");
     }
 
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Draw frame
+    // 1. Draw raw live frame
     ctx.drawImage(video, 0, 0, width, height);
+    const rawDataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
-    // Add visual timestamp & geotag watermark to canvas for proof integrity
-    const nowStr = new Date().toLocaleString('en-GB');
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
-    ctx.fillRect(16, height - 60, width - 32, 44);
-    ctx.font = 'bold 16px monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`FARMPROOF PMFBY • ${nowStr} • GPS: ${currentGps || 'LAT/LNG VERIFIED'}`, 28, height - 32);
+    // 2. Compute original image hash for duplicate detection
+    const hash = computeImageHash(rawDataUrl);
+    setSnapshotHash(hash);
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-    setSnapshotUrl(dataUrl);
+    // 3. Duplicate check across other statutory slots
+    const isDuplicate = existingPhotos.some(
+      (p) => p.slotNumber !== targetSlot.slotNumber && p.hash === hash,
+    );
+    if (isDuplicate) {
+      const dupSlot = existingPhotos.find(
+        (p) => p.slotNumber !== targetSlot.slotNumber && p.hash === hash,
+      );
+      setDuplicateError(
+        `Duplicate Image Detected: This photograph matches an image already attached to Slot #${dupSlot?.slotNumber || "another slot"}. Each statutory slot must be a distinct physical perspective.`,
+      );
+    } else {
+      setDuplicateError(null);
+    }
+
+    // 4. Perform rigorous Optical Quality Analysis (Blur, Exposure, Resolution, Blank)
+    const quality = analyzeImageQuality(canvas);
+    setQualityResult(quality);
+
+    // 5. Generate watermarked derivative derivative canvas
+    const todayDateStr = new Date().toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const nowTimeStr = new Date().toLocaleTimeString("en-GB") + " IST";
+
+    const watermarkedDataUrl = generateWatermarkedDerivative(canvas, {
+      slotNumber: targetSlot.slotNumber,
+      slotTitle: targetSlot.title,
+      capturedAtDate: todayDateStr,
+      capturedAtTime: nowTimeStr,
+      lat: currentGps?.lat,
+      lng: currentGps?.lng,
+      accuracy: currentGps?.accuracy,
+      originalHash: hash,
+      isLiveCapture: true,
+    });
+
+    setOriginalSnapshotUrl(rawDataUrl);
+    setWatermarkedSnapshotUrl(watermarkedDataUrl);
 
     // Pause video while reviewing
     try {
@@ -189,7 +283,10 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
 
   // Retake photo: discard snapshot and re-engage live video
   const handleRetake = () => {
-    setSnapshotUrl(null);
+    setOriginalSnapshotUrl(null);
+    setWatermarkedSnapshotUrl(null);
+    setQualityResult(null);
+    setDuplicateError(null);
     setUploadSuccessMsg(null);
     if (videoRef.current) {
       try {
@@ -202,71 +299,118 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
     }
   };
 
-  // Use Photo: upload snapshot to server and attach to application
+  // Use Photo: upload both original and watermarked derivative to server
   const handleUsePhoto = async () => {
-    if (!snapshotUrl) return;
+    if (!originalSnapshotUrl || !watermarkedSnapshotUrl || !qualityResult)
+      return;
+    if (duplicateError || qualityResult.status === "Rejected") return;
 
     setIsUploading(true);
     setUploadSuccessMsg(null);
 
     try {
-      // 1. Send base64 image data to existing /api/upload endpoint
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+      // Upload 1: Original Unmodified Photo
+      const rawUploadResp = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: `field_damage_cam_${Date.now()}.jpg`,
-          type: 'image/jpeg',
-          data: snapshotUrl
-        })
+          name: `slot_${targetSlot.slotNumber}_raw_${Date.now()}.jpg`,
+          type: "image/jpeg",
+          data: originalSnapshotUrl,
+        }),
       });
+      if (!rawUploadResp.ok)
+        throw new Error(
+          "Failed to upload original image to persistent storage",
+        );
+      const rawUploadResult = await rawUploadResp.json();
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Upload failed with HTTP status ${response.status}`);
-      }
+      // Upload 2: Watermarked Derivative
+      const wmUploadResp = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `slot_${targetSlot.slotNumber}_watermarked_${Date.now()}.jpg`,
+          type: "image/jpeg",
+          data: watermarkedSnapshotUrl,
+        }),
+      });
+      if (!wmUploadResp.ok)
+        throw new Error(
+          "Failed to upload watermarked derivative to persistent storage",
+        );
+      const wmUploadResult = await wmUploadResp.json();
 
-      const uploadResult = await response.json();
+      const todayDateStr = new Date().toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+      const nowTimeStr = new Date().toLocaleTimeString("en-GB") + " IST";
 
-      if (!uploadResult.success || !uploadResult.url) {
-        throw new Error('Server did not return a valid persistent image URL.');
-      }
+      // Preserving replacement audit if replacing an existing slot
+      const replacedAudit = existingSlotPhoto
+        ? [
+            ...(existingSlotPhoto.replacedAudit || []),
+            {
+              previousUrl: existingSlotPhoto.url,
+              replacedAt: new Date().toISOString(),
+              reason: "Retaken via direct camera",
+            },
+          ]
+        : undefined;
 
-      // 2. Assemble verified photograph object
-      const photoIndex = currentPhotoCount + 1;
       const verifiedPhoto: CapturedPhoto = {
         id: Date.now(),
-        label: `Field Evidence Photo #${photoIndex} (Direct Camera)`,
-        url: uploadResult.url,
-        timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-        gps: currentGps || '17.9689° N, 79.5941° E',
-        accuracyMeters: gpsAccuracy || 2.5,
+        slotNumber: targetSlot.slotNumber,
+        slotKey: targetSlot.slotKey,
+        label: targetSlot.title,
+        url: wmUploadResult.url, // Display URL is watermarked derivative
+        originalUrl: rawUploadResult.url, // Original immutable copy
+        watermarkedUrl: wmUploadResult.url,
+        timestamp: nowTimeStr,
+        date: todayDateStr,
+        gps: currentGps
+          ? `${currentGps.lat.toFixed(6)}° N, ${currentGps.lng.toFixed(6)}° E`
+          : "GPS: Location Unavailable",
+        accuracyMeters: currentGps?.accuracy || 0,
         tamperChecked: true,
-        sampleType: 'direct_camera_capture',
-        detectedDamage: 'Live camera snapshot verified & uploaded'
+        sampleType: targetSlot.slotKey,
+        detectedDamage: `Live statutory capture verified (Sharpness: ${qualityResult.blurScore}/100)`,
+        isLiveCapture: true,
+        captureMethod: "live_camera",
+        blurScore: qualityResult.blurScore,
+        isBlurry: qualityResult.isBlurry,
+        qualityStatus: qualityResult.status,
+        qualityReason: qualityResult.reason,
+        hash: snapshotHash || undefined,
+        replacedAudit,
       };
 
-      // 3. Attach to application
       onPhotoUploaded(verifiedPhoto);
-
-      setUploadSuccessMsg(`✓ Photo #${photoIndex} successfully uploaded and attached to application!`);
+      setUploadSuccessMsg(
+        `✓ Photo for Slot #${targetSlot.slotNumber} successfully verified & attached!`,
+      );
       setIsUploading(false);
 
-      // Offer user to take another photo or finish
+      setTimeout(() => {
+        handleClose();
+      }, 700);
     } catch (err: any) {
       setIsUploading(false);
-      alert(`Photo upload failed: ${err.message || 'Network error'}. Please retry.`);
+      alert(
+        `Photo upload failed: ${err.message || "Network error"}. Please retry.`,
+      );
     }
   };
 
-  // Close and stop everything
   const handleClose = () => {
     stopTracks(stream);
     setStream(null);
-    setSnapshotUrl(null);
+    setOriginalSnapshotUrl(null);
+    setWatermarkedSnapshotUrl(null);
+    setQualityResult(null);
+    setDuplicateError(null);
     onClose();
   };
 
@@ -278,29 +422,29 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
         {/* Header Bar */}
         <div className="px-5 py-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 flex items-center justify-center">
-              <Camera className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-emerald-600/80 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+              #{targetSlot.slotNumber}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-white">Direct Field Camera</h3>
-                <span className="px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono border border-emerald-500/40">
-                  Live View
+              <div className="inline-flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                <Camera className="w-3.5 h-3.5" />
+                <span>
+                  Statutory 5-Photo Kit • Slot {targetSlot.slotNumber} of 5
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono">
-                {currentGps ? `GPS Locked: ${currentGps}` : 'Geotagging active'}
-              </p>
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                {targetSlot.title}
+              </h3>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {hasMultipleCameras && !snapshotUrl && (
+            {hasMultipleCameras && !watermarkedSnapshotUrl && (
               <button
                 type="button"
                 onClick={toggleFacing}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-                title="Switch Front/Rear Camera"
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+                title="Switch between front and rear cameras"
               >
                 <SwitchCamera className="w-4 h-4" />
               </button>
@@ -309,166 +453,221 @@ export const DirectCameraModal: React.FC<DirectCameraModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition"
-              title="Close Camera"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
+              title="Close camera modal"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Viewport Area */}
-        <div className="relative bg-black flex-1 flex items-center justify-center overflow-hidden min-h-[320px] sm:min-h-[420px]">
-          {/* Hidden Canvas used for frame grabbing */}
-          <canvas ref={canvasRef} className="hidden" />
+        {/* Capture Instruction Tip */}
+        <div className="bg-slate-950/40 px-5 py-2.5 border-b border-slate-800 text-xs text-slate-300 flex items-center gap-2">
+          <Info className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{targetSlot.captureTip}</span>
+        </div>
 
-          {/* 1. Live Video Stream */}
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            className={`w-full h-full object-cover max-h-[500px] ${snapshotUrl ? 'hidden' : 'block'}`}
-          />
-
-          {/* 2. Snapshot Frozen Preview */}
-          {snapshotUrl && (
-            <div className="relative w-full h-full max-h-[500px]">
-              <img
-                src={snapshotUrl}
-                alt="Captured field snapshot"
-                className="w-full h-full object-cover max-h-[500px]"
-              />
-              <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-mono font-bold text-amber-300 border border-amber-500/40">
-                Snapshot Preview (Review Before Attaching)
-              </div>
+        {/* Main Viewport */}
+        <div className="relative flex-1 bg-black flex items-center justify-center min-h-[320px] sm:min-h-[420px] overflow-hidden">
+          {cameraLoading && (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white gap-3 bg-slate-950/80">
+              <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+              <span className="text-xs font-semibold">
+                Initializing optical camera sensor...
+              </span>
             </div>
           )}
 
-          {/* Loading Indicator */}
-          {cameraLoading && !cameraError && (
-            <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-3 text-white p-6 text-center">
-              <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
-              <div className="text-sm font-bold">Accessing Device Camera...</div>
-              <p className="text-xs text-slate-400 max-w-sm">
-                Requesting rear camera stream via HTML5 MediaDevices API. Please grant browser permissions if prompted.
-              </p>
-            </div>
-          )}
-
-          {/* Camera Permission / Error Banner */}
           {cameraError && (
-            <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center text-white space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-rose-950/80 border border-rose-500/40 text-rose-400 flex items-center justify-center">
-                <AlertTriangle className="w-7 h-7" />
+            <div className="p-6 text-center max-w-md space-y-3 z-30">
+              <div className="w-12 h-12 rounded-2xl bg-rose-950/80 border border-rose-500 text-rose-400 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
               </div>
-              <div className="space-y-1 max-w-md">
-                <h4 className="text-base font-bold text-rose-300">{cameraError.title}</h4>
-                <p className="text-xs text-slate-300">{cameraError.message}</p>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl max-w-md text-xs text-slate-400 space-y-2 text-left">
-                <div className="font-bold text-slate-200 flex items-center gap-1.5">
-                  <Info className="w-4 h-4 text-amber-400" />
-                  <span>How to enable camera permissions:</span>
-                </div>
-                <p className="leading-relaxed">{cameraError.instruction}</p>
+              <h4 className="text-sm font-bold text-white">
+                {cameraError.title}
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {cameraError.message}
+              </p>
+              <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-[11px] text-emerald-300 text-left">
+                <strong>How to fix:</strong> {cameraError.instruction}
               </div>
               <button
                 type="button"
                 onClick={() => startCamera(facingMode)}
-                className="py-2.5 px-6 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 transition shadow-lg"
+                className="mt-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs"
               >
-                <RefreshCw className="w-4 h-4" />
-                <span>Retry Camera</span>
+                Retry Camera
               </button>
             </div>
           )}
 
-          {/* Visual Crop Damage Guide Box Overlay (Active during live stream) */}
-          {!snapshotUrl && !cameraLoading && !cameraError && (
-            <div className="absolute inset-8 border-2 border-dashed border-emerald-400/50 rounded-2xl pointer-events-none flex flex-col justify-between p-3">
-              <div className="flex justify-between text-[11px] font-mono text-emerald-300 bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm self-start">
-                <span>[Plot Alignment Box]</span>
+          {/* Live Video */}
+          <video
+            ref={videoRef}
+            playsInline
+            autoPlay
+            muted
+            className={`w-full h-full object-cover ${watermarkedSnapshotUrl ? "hidden" : "block"}`}
+          />
+
+          {/* Reviewing Snapshot (Shows Watermarked Derivative) */}
+          {watermarkedSnapshotUrl && (
+            <div className="w-full h-full relative flex items-center justify-center bg-black">
+              <img
+                src={watermarkedSnapshotUrl}
+                alt="Captured Snapshot Review"
+                className="w-full h-full object-contain max-h-[60vh]"
+              />
+
+              {/* Quality & Duplicate Overlays */}
+              <div className="absolute top-3 left-3 right-3 z-20 space-y-2">
+                {duplicateError && (
+                  <div className="p-3 rounded-2xl bg-rose-900/90 border border-rose-500 text-white text-xs flex items-start gap-2.5 shadow-lg backdrop-blur-md">
+                    <AlertTriangle className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold block">
+                        Duplicate Image Blocked
+                      </span>
+                      <span>{duplicateError}</span>
+                    </div>
+                  </div>
+                )}
+
+                {qualityResult && (
+                  <div
+                    className={`p-3 rounded-2xl border text-xs flex items-start gap-2.5 shadow-lg backdrop-blur-md ${
+                      qualityResult.status === "Good"
+                        ? "bg-emerald-950/90 border-emerald-400 text-emerald-100"
+                        : qualityResult.status === "Warning"
+                          ? "bg-amber-950/90 border-amber-400 text-amber-100"
+                          : "bg-rose-950/90 border-rose-500 text-rose-100"
+                    }`}
+                  >
+                    {qualityResult.status === "Good" ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle
+                        className={`w-5 h-5 shrink-0 mt-0.5 ${qualityResult.status === "Warning" ? "text-amber-400" : "text-rose-400"}`}
+                      />
+                    )}
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">
+                          {qualityResult.status === "Good"
+                            ? "Quality Status: Verified Sharp (Accepted)"
+                            : qualityResult.status === "Warning"
+                              ? "Quality Status: Warning (Retake Recommended)"
+                              : "Quality Status: Rejected (Too Blurry or Unusable)"}
+                        </span>
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-black/40">
+                          Sharpness: {qualityResult.blurScore}/100
+                        </span>
+                      </div>
+                      {qualityResult.reason && (
+                        <p className="text-[11px] opacity-90">
+                          {qualityResult.reason}
+                        </p>
+                      )}
+                      {qualityResult.advice && (
+                        <p className="text-[10px] opacity-80 italic">
+                          {qualityResult.advice}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-center text-[11px] font-medium text-emerald-200 bg-black/50 py-1 px-3 rounded-xl backdrop-blur-sm self-center">
-                Position damaged crop within frame & hold phone steady
-              </div>
+            </div>
+          )}
+
+          {/* Alignment Framing Crosshair Guide */}
+          {!watermarkedSnapshotUrl && !cameraLoading && !cameraError && (
+            <div className="absolute inset-8 pointer-events-none border-2 border-dashed border-emerald-400/40 rounded-2xl flex items-center justify-center">
+              <div className="w-8 h-8 border-t-2 border-l-2 border-emerald-400 absolute top-0 left-0"></div>
+              <div className="w-8 h-8 border-t-2 border-r-2 border-emerald-400 absolute top-0 right-0"></div>
+              <div className="w-8 h-8 border-b-2 border-l-2 border-emerald-400 absolute bottom-0 left-0"></div>
+              <div className="w-8 h-8 border-b-2 border-r-2 border-emerald-400 absolute bottom-0 right-0"></div>
+              <span className="text-[11px] font-mono text-emerald-300/80 bg-slate-950/60 px-3 py-1 rounded-full">
+                Center {targetSlot.shortLabel} inside box
+              </span>
             </div>
           )}
         </div>
 
-        {/* Success Banner if photo uploaded */}
-        {uploadSuccessMsg && (
-          <div className="bg-emerald-950/90 border-t border-emerald-500/40 px-5 py-2.5 text-xs text-emerald-200 flex items-center justify-between">
-            <span className="font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              {uploadSuccessMsg}
-            </span>
-            <span className="text-[10px] font-mono text-emerald-400">Total attached: {currentPhotoCount}</span>
-          </div>
-        )}
-
-        {/* Controls Footer */}
+        {/* Footer Actions */}
         <div className="p-4 sm:p-5 bg-slate-950 border-t border-slate-800">
-          {!snapshotUrl ? (
-            /* State 1: Live Stream -> Capture Button */
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-xs text-slate-400 hidden sm:block">
-                Rear Camera ({facingMode === 'environment' ? 'Environment/Back' : 'User/Front'})
-              </div>
+          {uploadSuccessMsg && (
+            <div className="mb-3 p-3 rounded-xl bg-emerald-950/80 border border-emerald-500 text-emerald-200 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>{uploadSuccessMsg}</span>
+            </div>
+          )}
 
-              <div className="flex-1 sm:flex-none flex justify-center">
-                <button
-                  type="button"
-                  disabled={Boolean(cameraLoading || cameraError)}
-                  onClick={handleTakeSnapshot}
-                  className="py-3 px-8 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white font-black text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-900/30 active:scale-95 transition"
-                >
-                  <Camera className="w-5 h-5" />
-                  <span>Capture Photo</span>
-                </button>
+          {!watermarkedSnapshotUrl ? (
+            /* Live Camera Capture Trigger */
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-xs text-slate-400">
+                <span>Hold steady &amp; ensure good lighting</span>
               </div>
 
               <button
                 type="button"
-                onClick={handleClose}
-                className="py-2.5 px-4 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs font-semibold"
+                onClick={handleTakeSnapshot}
+                disabled={cameraLoading || Boolean(cameraError)}
+                className="px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white font-bold text-xs flex items-center gap-2.5 shadow-lg active:scale-95 transition"
               >
-                Close
+                <Camera className="w-4 h-4" />
+                <span>Capture Snapshot</span>
               </button>
             </div>
           ) : (
-            /* State 2: Snapshot Preview -> Retake or Use Photo */
+            /* Review Mode Actions */
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="text-xs text-slate-300 text-center sm:text-left">
-                Review snapshot clarity. Click <strong>Use Photo</strong> to upload.
-              </div>
+              <button
+                type="button"
+                onClick={handleRetake}
+                disabled={isUploading}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Retake Photo</span>
+              </button>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                 <button
                   type="button"
-                  disabled={isUploading}
-                  onClick={handleRetake}
-                  className="flex-1 sm:flex-none py-3 px-5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Retake</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isUploading}
                   onClick={handleUsePhoto}
-                  className="flex-1 sm:flex-none py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30 transition disabled:opacity-50"
+                  disabled={
+                    isUploading ||
+                    Boolean(duplicateError) ||
+                    qualityResult?.status === "Rejected"
+                  }
+                  className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-md ${
+                    isUploading ||
+                    Boolean(duplicateError) ||
+                    qualityResult?.status === "Rejected"
+                      ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                      : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  }`}
                 >
                   {isUploading ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Uploading to Server...</span>
+                      <span>Securing &amp; Uploading Evidence...</span>
                     </>
+                  ) : qualityResult?.status === "Rejected" ? (
+                    <span>Cannot Save: Quality Rejected (Retake)</span>
+                  ) : duplicateError ? (
+                    <span>Cannot Save: Duplicate Image</span>
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Use Photo & Upload</span>
+                      <span>
+                        {existingSlotPhoto
+                          ? "Save & Replace Slot"
+                          : "Save & Attach to Slot"}
+                      </span>
                     </>
                   )}
                 </button>

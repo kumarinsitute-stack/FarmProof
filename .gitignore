@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+# Uploaded test evidence
+uploads/*
+!uploads/.gitkeep

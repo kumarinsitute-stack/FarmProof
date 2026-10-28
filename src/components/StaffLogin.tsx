@@ -18,8 +18,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({
   language,
   onLoginSuccess
 }) => {
-  const [identifier, setIdentifier] = useState('officer@farmproof.gov.in');
-  const [password, setPassword] = useState('Officer@2026');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -45,12 +45,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickFill = (email: string, pass: string) => {
-    setIdentifier(email);
-    setPassword(pass);
-    setErrorMsg(null);
   };
 
   return (
@@ -109,7 +103,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="e.g. officer@farmproof.gov.in"
+                  placeholder="Enter official email or government ID"
+                  autoComplete="username"
                   required
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800"
                 />
@@ -126,7 +121,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
                   required
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:border-slate-800"
                 />
@@ -151,48 +147,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({
               )}
             </button>
           </form>
-
-          {/* Quick Demo Staff Logins */}
-          <div className="pt-4 border-t border-slate-200 space-y-3">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Authorized Test Staff Accounts:
-            </span>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {/* Option 1: Officer */}
-              <button
-                type="button"
-                onClick={() => handleQuickFill('officer@farmproof.gov.in', 'Officer@2026')}
-                className="p-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-400 text-left transition flex items-start gap-3 group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition">
-                  AO
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 block">S. Sharma (Agricultural Officer)</span>
-                  <span className="text-[10px] text-slate-500 font-mono block">officer@farmproof.gov.in</span>
-                  <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">Role: Officer (Approvals & Assignments)</span>
-                </div>
-              </button>
-
-              {/* Option 2: Surveyor */}
-              <button
-                type="button"
-                onClick={() => handleQuickFill('surveyor@farmproof.gov.in', 'Surveyor@2026')}
-                className="p-3 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-400 text-left transition flex items-start gap-3 group"
-              >
-                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs shrink-0 group-hover:scale-105 transition">
-                  FS
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 block">K. Ramesh (Field Surveyor)</span>
-                  <span className="text-[10px] text-slate-500 font-mono block">surveyor@farmproof.gov.in</span>
-                  <span className="text-[10px] text-amber-700 font-semibold block mt-0.5">Role: Surveyor (On-site Inspections)</span>
-                </div>
-              </button>
-            </div>
           </div>
         </div>
-      </div>
 
       {/* Return to Farmer Portal */}
       <div className="mt-4 text-center">

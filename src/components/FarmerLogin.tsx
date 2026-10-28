@@ -22,8 +22,8 @@ export const FarmerLogin: React.FC<FarmerLoginProps> = ({
   const [authMethod, setAuthMethod] = useState<'password' | 'otp'>('password');
   
   // Login form state
-  const [identifier, setIdentifier] = useState('9848023145');
-  const [password, setPassword] = useState('Farmer@2026');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   
@@ -105,13 +105,6 @@ export const FarmerLogin: React.FC<FarmerLoginProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickDemo = (phoneNum: string, pass: string) => {
-    setIdentifier(phoneNum);
-    setPassword(pass);
-    setAuthMethod('password');
-    setErrorMsg(null);
   };
 
   return (
@@ -226,10 +219,11 @@ export const FarmerLogin: React.FC<FarmerLoginProps> = ({
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
-                    type="text"
+                    type="tel"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. 9848023145 or Aadhaar"
+                    placeholder="Enter registered mobile number"
+                    autoComplete="username"
                     required
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
                   />
@@ -256,7 +250,8 @@ export const FarmerLogin: React.FC<FarmerLoginProps> = ({
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••••••"
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
                       required
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
                     />
@@ -309,31 +304,6 @@ export const FarmerLogin: React.FC<FarmerLoginProps> = ({
                   </>
                 )}
               </button>
-
-              {/* Demo Credentials Helper */}
-              <div className="pt-4 border-t border-slate-200 space-y-2">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Quick Demo Farmer Logins:
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo('9848023145', 'Farmer@2026')}
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-left transition"
-                  >
-                    <span className="text-xs font-bold text-slate-900 block">Ramulu Kurapati</span>
-                    <span className="text-[10px] text-slate-500 font-mono block">9848023145 • Nallabelly</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo('9848099881', 'Farmer@2026')}
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-left transition"
-                  >
-                    <span className="text-xs font-bold text-slate-900 block">Lakshmi Bai</span>
-                    <span className="text-[10px] text-slate-500 font-mono block">9848099881 • Chennaraopet</span>
-                  </button>
-                </div>
-              </div>
             </form>
           )}
 

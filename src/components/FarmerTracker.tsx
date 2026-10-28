@@ -97,7 +97,7 @@ export const FarmerTracker: React.FC<FarmerTrackerProps> = ({
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Estimated Compensation Card */}
+        {/* Estimated Compensation Card with Simulated DBT Disclaimer */}
         <div className="bg-gradient-to-br from-slate-50 to-emerald-50/50 border border-emerald-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
@@ -113,13 +113,72 @@ export const FarmerTracker: React.FC<FarmerTrackerProps> = ({
 
           <div className="flex flex-col items-end gap-1.5 w-full sm:w-auto">
             <span className="px-3 py-1 rounded-full text-[11px] font-bold font-mono bg-emerald-100 text-emerald-800 border border-emerald-200">
-              {claim.payoutStatus === 'Disbursed to Bank' ? 'DBT DISBURSED' : 'PFMS SEEDED'}
+              {claim.payoutStatus === 'Disbursed to Bank' ? 'DEMO DBT DISBURSED' : 'PFMS SEEDED'}
             </span>
             <span className="text-[10px] text-slate-500 font-mono">
               A/C: XXXX-XXXX-2847 (SBI)
             </span>
           </div>
         </div>
+
+        {/* DEMO / SIMULATED DBT DISCLAIMER */}
+        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-bold block uppercase tracking-wider text-[10px] text-amber-800">
+              Notice: Simulated DBT Demonstration
+            </span>
+            <span>
+              {t.simulatedDbtNotice || "FarmProof demonstrates automated claim processing workflows. Direct Benefit Transfer (DBT) disbursement is shown for simulation purposes; actual indemnity disbursement is executed through state PFMS government banking channels."}
+            </span>
+          </div>
+        </div>
+
+        {/* AI & Weather Corroboration Context if available */}
+        {(claim.aiAssessment || claim.weatherData) && (
+          <div className="grid sm:grid-cols-2 gap-3 text-xs">
+            {claim.aiAssessment && (
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-slate-800">
+                  <span>AI Crop Health Advisory</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                    claim.aiAssessment.severityRecommendation === 'Severe' ? 'bg-rose-100 text-rose-800' :
+                    claim.aiAssessment.severityRecommendation === 'Moderate' ? 'bg-amber-100 text-amber-800' :
+                    'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {claim.aiAssessment.severityRecommendation || 'Advisory'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600">
+                  {claim.aiAssessment.explanation || claim.aiAssessment.damageDescription}
+                </p>
+                <span className="text-[10px] text-slate-400 block italic">
+                  * Advisory estimate. Officer maintains final decision-making authority.
+                </span>
+              </div>
+            )}
+
+            {claim.weatherData && (
+              <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                <div className="flex items-center justify-between font-bold text-sky-900">
+                  <span className="flex items-center gap-1.5">
+                    <CloudRain className="w-3.5 h-3.5 text-sky-600" />
+                    <span>Open-Meteo Corroboration</span>
+                  </span>
+                  <span className="font-mono text-[10px] text-sky-800 font-bold">
+                    {claim.weatherData.precipitationMm} {claim.weatherData.units?.precipitation || 'mm'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-sky-800">
+                  Max Wind: {claim.weatherData.windSpeedMaxKmh} {claim.weatherData.units?.windSpeed || 'km/h'} • Temp: {claim.weatherData.tempMaxC}°C
+                </p>
+                <span className="text-[10px] text-sky-600 block italic">
+                  * Satellite radar corroboration, not direct proof of causation.
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 6-Stage Timeline */}
         <div className="space-y-3">

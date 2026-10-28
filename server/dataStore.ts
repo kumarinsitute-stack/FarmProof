@@ -26,8 +26,12 @@ export interface User {
 
 export interface ApplicationPhoto {
   id: number;
+  slotNumber?: number; // 1 to 5
+  slotKey?: string;
   label: string;
   url: string;
+  originalUrl?: string;
+  watermarkedUrl?: string;
   timestamp: string;
   date: string;
   gps: string;
@@ -35,6 +39,14 @@ export interface ApplicationPhoto {
   tamperChecked: boolean;
   sampleType?: string;
   detectedDamage?: string;
+  captureMethod?: 'live_camera' | 'gallery_upload';
+  isLiveCapture?: boolean;
+  blurScore?: number;
+  isBlurry?: boolean;
+  qualityStatus?: 'Good' | 'Warning' | 'Rejected';
+  qualityReason?: string;
+  hash?: string;
+  replacedAudit?: { previousUrl: string; replacedAt: string; reason?: string }[];
 }
 
 export interface ApplicationDocument {
@@ -72,6 +84,37 @@ export interface HistoryItem {
   notes: string;
 }
 
+export interface AIAssessmentData {
+  available: boolean;
+  damageBand?: 'Marginal' | 'Moderate' | 'Severe';
+  likelyCause?: string;
+  confidence?: number;
+  lodgingPercent?: number;
+  leafTearSeverity?: string;
+  plantCountQuadrat?: string;
+  boundaryIntegrity?: string;
+  suggestedAction?: string;
+  modelSummary?: string;
+  evaluatedAt?: string;
+  provider?: string;
+  advisoryNotice: string;
+  insufficientEvidence?: boolean;
+  unclearReason?: string;
+}
+
+export interface WeatherData {
+  available: boolean;
+  recordedRainMm?: number;
+  maxWindKmh?: number;
+  weatherCode?: number;
+  weatherDesc?: string;
+  queryDate?: string;
+  location?: string;
+  matchScore?: 'Match' | 'Partial' | 'No match' | 'Unavailable';
+  corroboratedAt?: string;
+  disclaimer: string;
+}
+
 export interface Application {
   id: string;
   farmerId: string;
@@ -91,10 +134,12 @@ export interface Application {
   category: string;
   crop: string;
   cause: string;
+  incidentDate?: string;
   description: string;
   aiDamage: 'Severe' | 'Moderate' | 'Low';
   aiConfidence: number;
   damagePercentage: number;
+  aiAssessment?: AIAssessmentData;
   weatherMatch: 'Match' | 'Partial' | 'No match';
   weatherDetails: string;
   weatherStats?: {
@@ -103,6 +148,7 @@ export interface Application {
     historicalMeanRainMm: number;
     hailRadarDetected: boolean;
   };
+  weatherData?: WeatherData;
   priority: 'Verified' | 'Review' | 'Visit';
   suggestedAction: string;
   status: 'Draft' | 'Submitted' | 'Under Review' | 'Survey Assigned' | 'Survey in Progress' | 'Survey Completed' | 'Correction Required' | 'Approved' | 'Rejected';
@@ -131,6 +177,12 @@ export interface Application {
   payoutStatus?: 'Pending' | 'Approved' | 'Disbursed to Bank' | 'Rejected';
   estimatedPayoutInr: number;
   sanctionedPayoutInr?: number;
+  sanctionDetails?: {
+    sanctionOrderNumber: string;
+    sanctionedAmountInr: number;
+    sanctionDate: string;
+    officerName: string;
+  };
   photos: ApplicationPhoto[];
   documents?: ApplicationDocument[];
   history: HistoryItem[];
@@ -147,15 +199,42 @@ export interface AppNotification {
   timestamp: string;
 }
 
+export interface InstitutionalUsage {
+  organizationName: string;
+  division: string;
+  activeTier: string;
+  billingStatus: string;
+  claimsIngested: number;
+  aiVisionRuns: number;
+  weatherCorroborations: number;
+  fieldSurveysDispatched: number;
+  lastBillingCycleStart: string;
+  commercialReadinessNotes: string;
+}
+
 interface DatabaseSchema {
   users: User[];
   applications: Application[];
   notifications: AppNotification[];
   sessions: { [token: string]: string }; // token -> userId
+  institutionalUsage: InstitutionalUsage;
 }
 
 const DATA_DIR = path.resolve(__dirname, '../data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
+
+const INITIAL_INSTITUTIONAL_USAGE: InstitutionalUsage = {
+  organizationName: 'Department of Agriculture & Farmers Welfare, Warangal Rural Division',
+  division: 'Telangana Southern Circle (Mandal Crop Insurance Administration)',
+  activeTier: 'Institutional Pilot Tier (Research & Evaluation)',
+  billingStatus: 'Pilot / Sandbox (Free Evaluator Access)',
+  claimsIngested: 3,
+  aiVisionRuns: 3,
+  weatherCorroborations: 3,
+  fieldSurveysDispatched: 2,
+  lastBillingCycleStart: '01 Oct 2026',
+  commercialReadinessNotes: 'Farmers access 100% free under PMFBY public mandate. Ready for institutional per-claim billing tier (e.g., ₹45 per processed evidence packet) upon commercial scale-up.'
+};
 
 // Initial seed users
 const INITIAL_USERS: User[] = [
@@ -605,7 +684,12 @@ class DataStore {
     if (fs.existsSync(DB_FILE)) {
       try {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (!parsed.institutionalUsage) {
+          parsed.institutionalUsage = { ...INITIAL_INSTITUTIONAL_USAGE };
+          this.save(parsed);
+        }
+        return parsed;
       } catch (err) {
         console.error('Error reading db.json, re-initializing:', err);
       }
@@ -618,7 +702,8 @@ class DataStore {
         'token-officer-demo': 'usr-officer-1',
         'token-surveyor-demo': 'usr-surveyor-1',
         'token-farmer-demo': 'usr-farmer-1'
-      }
+      },
+      institutionalUsage: { ...INITIAL_INSTITUTIONAL_USAGE }
     };
     this.save(initial);
     return initial;
@@ -725,6 +810,43 @@ class DataStore {
       return true;
     }
     return false;
+  }
+
+  // Institutional Usage (Phase 10: Realistic Commercial & Readiness Model)
+  getInstitutionalUsage(): InstitutionalUsage {
+    if (!this.db.institutionalUsage) {
+      this.db.institutionalUsage = { ...INITIAL_INSTITUTIONAL_USAGE };
+      this.save();
+    }
+    return this.db.institutionalUsage;
+  }
+
+  recordInstitutionalMetric(metric: 'claims' | 'ai' | 'weather' | 'survey') {
+    if (!this.db.institutionalUsage) {
+      this.db.institutionalUsage = { ...INITIAL_INSTITUTIONAL_USAGE };
+    }
+    if (metric === 'claims') this.db.institutionalUsage.claimsIngested += 1;
+    if (metric === 'ai') this.db.institutionalUsage.aiVisionRuns += 1;
+    if (metric === 'weather') this.db.institutionalUsage.weatherCorroborations += 1;
+    if (metric === 'survey') this.db.institutionalUsage.fieldSurveysDispatched += 1;
+    this.save();
+  }
+
+  // Clean state reset for repeated regression testing
+  resetDatabaseForTesting(): void {
+    const cleanDb: DatabaseSchema = {
+      users: [...INITIAL_USERS],
+      applications: JSON.parse(JSON.stringify(INITIAL_APPLICATIONS)),
+      notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
+      sessions: {
+        'token-officer-demo': 'usr-officer-1',
+        'token-surveyor-demo': 'usr-surveyor-1',
+        'token-farmer-demo': 'usr-farmer-1'
+      },
+      institutionalUsage: { ...INITIAL_INSTITUTIONAL_USAGE }
+    };
+    this.db = cleanDb;
+    this.save(cleanDb);
   }
 }
 

@@ -3,21 +3,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { ViewMode, Language, PerilType, CropType, Claim, CapturedPhoto, User } from './types';
-import { INITIAL_CLAIMS } from './mockData';
-import { api } from './api';
-import { Navbar } from './components/Navbar';
-import { RoleSelect } from './components/RoleSelect';
-import { FarmerLogin } from './components/FarmerLogin';
-import { FarmerDashboard } from './components/FarmerDashboard';
-import { StaffLogin } from './components/StaffLogin';
-import { SurveyorDashboard } from './components/SurveyorDashboard';
-import { OfficerDashboard } from './components/OfficerDashboard';
-import { FarmerReport } from './components/FarmerReport';
-import { FarmerCapture } from './components/FarmerCapture';
-import { FarmerTracker } from './components/FarmerTracker';
-import { PresentationViewerModal } from './components/PresentationViewerModal';
+import React, { useState, useEffect } from "react";
+import {
+  ViewMode,
+  Language,
+  PerilType,
+  CropType,
+  Claim,
+  CapturedPhoto,
+  User,
+} from "./types";
+import { INITIAL_CLAIMS } from "./mockData";
+import { api } from "./api";
+import { Navbar } from "./components/Navbar";
+import { RoleSelect } from "./components/RoleSelect";
+import { FarmerLogin } from "./components/FarmerLogin";
+import { FarmerDashboard } from "./components/FarmerDashboard";
+import { StaffLogin } from "./components/StaffLogin";
+import { SurveyorDashboard } from "./components/SurveyorDashboard";
+import { OfficerDashboard } from "./components/OfficerDashboard";
+import { FarmerReport } from "./components/FarmerReport";
+import { FarmerCapture } from "./components/FarmerCapture";
+import { FarmerTracker } from "./components/FarmerTracker";
+import { PresentationViewerModal } from "./components/PresentationViewerModal";
 
 export default function App() {
   // Current authenticated user session
@@ -26,20 +34,34 @@ export default function App() {
   const [isPresentationOpen, setIsPresentationOpen] = useState<boolean>(false);
 
   // Initial View starts with Government Scheme Profile
-  const [view, setView] = useState<ViewMode>('role_select');
-  const [language, setLanguage] = useState<Language>('EN');
+  const [view, setView] = useState<ViewMode>("role_select");
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem("farmproof_preferred_lang");
+      if (saved === "EN" || saved === "HI" || saved === "TE")
+        return saved as Language;
+    } catch {}
+    return "EN";
+  });
+
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    try {
+      localStorage.setItem("farmproof_preferred_lang", lang);
+    } catch {}
+  };
 
   // Farmer State (Matching Ramulu, 1.2 ha paddy farmer near Warangal)
-  const [peril, setPeril] = useState<PerilType>('Hail');
-  const [crop, setCrop] = useState<CropType>('Paddy (Kharif)');
+  const [peril, setPeril] = useState<PerilType>("Hail");
+  const [crop, setCrop] = useState<CropType>("Paddy (Kharif)");
   const [location, setLocation] = useState({
     lat: 17.9689,
     lng: 79.5941,
     accuracy: 3.2,
-    locked: true
+    locked: true,
   });
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [activeClaimId, setActiveClaimId] = useState<string>('FP-2041');
+  const [activeClaimId, setActiveClaimId] = useState<string>("FP-2041");
 
   // Officer / System State
   const [claimsList, setClaimsList] = useState<Claim[]>(INITIAL_CLAIMS);
@@ -54,7 +76,7 @@ export default function App() {
           setCurrentUser(user);
         }
       } catch (err) {
-        console.error('Session check failed:', err);
+        console.error("Session check failed:", err);
       } finally {
         setIsAuthChecking(false);
       }
@@ -76,97 +98,135 @@ export default function App() {
       ...prev,
       lat,
       lng,
-      locked: true
+      locked: true,
     }));
   };
 
   // Live Open-Meteo & AI Processing Engine for 72h camera flow
   const handleSubmitPhotos = async (capturedPhotos: CapturedPhoto[]) => {
     setIsSubmitting(true);
-    let weatherResult: Claim['weatherMatch'] = 'Match';
-    let weatherDetail = 'Hailstorm & 48.2mm precipitation recorded on 16 Oct within 4km radius';
-    let recordedRain = 48.2;
-    let maxWind = 46.5;
+    const todayStr = new Date().toISOString().split("T")[0];
+    let weatherResult: Claim["weatherMatch"] = "No match";
+    let weatherDetail = "Weather check pending or unavailable for coordinates";
+    let weatherDataObj: any = undefined;
 
     // 1. Fetch real Open-Meteo weather history
     try {
       const weatherRes = await fetch(
-        `/api/weather?lat=${location.lat}&lng=${location.lng}&date=2024-10-16`
+        `/api/weather?lat=${location.lat}&lng=${location.lng}&date=${todayStr}`,
       );
       if (weatherRes.ok) {
         const wData = await weatherRes.json();
-        if (wData && wData.daily) {
-          recordedRain = wData.daily.precipitation_sum?.[0] || 48.2;
-          maxWind = wData.daily.wind_speed_10m_max?.[0] || 46.5;
-          weatherDetail = `Weather checked: Rain ${recordedRain}mm, Wind ${maxWind}km/h recorded on 16 Oct`;
-          weatherResult = 'Match';
+        weatherDataObj = wData;
+        if (wData.available && wData.daily) {
+          const rain =
+            wData.daily.precipitation_sum?.[0] !== undefined
+              ? `${wData.daily.precipitation_sum[0]} mm`
+              : "0 mm";
+          const wind =
+            wData.daily.wind_speed_10m_max?.[0] !== undefined
+              ? `${wData.daily.wind_speed_10m_max[0]} km/h`
+              : "N/A";
+          weatherDetail = `Open-Meteo checked: Precipitation ${rain}, Max Wind ${wind} on ${todayStr}`;
+          weatherResult =
+            wData.daily.precipitation_sum?.[0] > 10 ? "Match" : "Partial";
+        } else {
+          weatherDetail =
+            wData.error ||
+            "Meteorological station records unavailable for coordinates";
+          weatherResult = "No match";
         }
       }
     } catch {
-      weatherDetail = 'Hailstorm & 48.2mm rain recorded on 16 Oct within 4km';
+      weatherDetail =
+        "Weather service temporarily unreachable; claim forwarded with photographic evidence";
+      weatherResult = "No match";
     }
 
     // 2. Call Gemini AI Vision / Damage Estimation Engine
-    let aiDamageBand: Claim['aiDamage'] = 'Severe';
-    let aiConfidence = 84;
-    let damagePercentage = 84;
-    let suggestedAction = 'Visit: Damage is severe, spot-check required before payout';
+    let aiDamageBand: Claim["aiDamage"] = "Moderate";
+    let aiConfidence = 0;
+    let damagePercentage = 50;
+    let suggestedAction =
+      "Review: check pack remotely or route to field surveyor";
+    let aiAssessmentObj: any = undefined;
 
     try {
-      const aiRes = await fetch('/api/ai/damage-estimate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const aiRes = await fetch("/api/ai/damage-estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           crop,
           peril,
-          plotSize: '1.2 ha',
-          observedLoss: 84,
-          photos: capturedPhotos.map((p) => ({ id: p.id, label: p.label, gps: p.gps }))
-        })
+          plotSize: "1.2 ha",
+          observedLoss: 75,
+          photos: capturedPhotos.map((p) => ({
+            id: p.id,
+            label: p.label,
+            gps: p.gps,
+            isBlurry: p.isBlurry,
+            isLiveCapture: p.isLiveCapture,
+          })),
+        }),
       });
 
       if (aiRes.ok) {
         const aiData = await aiRes.json();
-        if (aiData.damageBand) {
-          aiDamageBand = aiData.damageBand === 'severe' ? 'Severe' : aiData.damageBand === 'moderate' ? 'Moderate' : 'Low';
-        }
-        if (aiData.confidence) {
-          aiConfidence = Math.round(aiData.confidence * 100);
-        }
-        if (aiData.lodgingPercent) {
-          damagePercentage = aiData.lodgingPercent;
-        }
-        if (aiData.suggestedAction) {
-          suggestedAction = aiData.suggestedAction;
+        aiAssessmentObj = aiData;
+        if (aiData.available && aiData.damageBand) {
+          aiDamageBand =
+            aiData.damageBand === "Severe" || aiData.damageBand === "severe"
+              ? "Severe"
+              : aiData.damageBand === "Moderate" ||
+                  aiData.damageBand === "moderate"
+                ? "Moderate"
+                : "Low";
+          aiConfidence = Math.round((aiData.confidence || 0.7) * 100);
+          damagePercentage = aiData.lodgingPercent || 60;
+          suggestedAction = aiData.suggestedAction || suggestedAction;
+        } else {
+          aiConfidence = 0;
+          suggestedAction =
+            "Review: AI vision unconfigured; manual officer assessment required";
         }
       }
     } catch {
-      aiDamageBand = 'Severe';
-      aiConfidence = 84;
-      damagePercentage = 84;
-      suggestedAction = 'Visit: Damage is severe, spot-check required before payout';
+      aiConfidence = 0;
+      suggestedAction =
+        "Review: AI vision call timed out; route to ground surveyor";
     }
 
     // 3. Assemble and persist claim
+    const nowTimeStr = new Date().toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     try {
       const newApp = await api.createApplication({
-        farmerName: currentUser ? currentUser.name : 'Ramulu Kurapati',
-        phone: currentUser ? currentUser.phone : '9848023145',
+        farmerName: currentUser ? currentUser.name : "Ramulu Kurapati",
+        phone: currentUser ? currentUser.phone : "9848023145",
         crop: crop,
         cause: peril,
-        plotSize: '1.2 ha',
+        plotSize: "1.2 ha",
         aiDamage: aiDamageBand,
         aiConfidence: aiConfidence,
         damagePercentage: damagePercentage,
+        aiAssessment: aiAssessmentObj,
         weatherMatch: weatherResult,
         weatherDetails: weatherDetail,
-        priority: aiConfidence >= 80 && aiDamageBand === 'Severe' ? 'Visit' : 'Review',
+        weatherData: weatherDataObj,
+        priority:
+          aiConfidence >= 75 && aiDamageBand === "Severe" ? "Visit" : "Review",
         suggestedAction: suggestedAction,
-        status: 'Submitted',
+        status: "Submitted",
         photos: capturedPhotos,
         photosCount: capturedPhotos.length,
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
       });
 
       setClaimsList((prev) => [newApp, ...prev]);
@@ -176,73 +236,75 @@ export default function App() {
       const randomId = `FP-2026-${Math.floor(2055 + Math.random() * 400)}`;
       const fallbackClaim: Claim = {
         id: randomId,
-        farmerName: currentUser ? currentUser.name : 'Ramulu Kurapati',
-        phone: currentUser ? currentUser.phone : '9848023145',
-        aadhaar: 'XXXX-XXXX-8492',
-        bankAccount: '3849102847',
-        bankName: 'State Bank of India (Warangal)',
+        farmerName: currentUser ? currentUser.name : "Ramulu Kurapati",
+        phone: currentUser ? currentUser.phone : "9848023145",
+        aadhaar: "XXXX-XXXX-8492",
+        bankAccount: "3849102847",
+        bankName: "State Bank of India (Warangal)",
         policyNumber: `PMFBY/TS/WR/2026/${Math.floor(10000 + Math.random() * 90000)}`,
-        village: 'Nallabelly',
-        district: 'Warangal Rural',
-        state: 'Telangana',
-        surveyNumber: '412/A',
-        plotSize: '1.2 ha',
+        village: "Nallabelly",
+        district: "Warangal Rural",
+        state: "Telangana",
+        surveyNumber: "412/A",
+        plotSize: "1.2 ha",
         crop: crop,
         cause: peril,
         aiDamage: aiDamageBand,
         aiConfidence: aiConfidence,
         damagePercentage: damagePercentage,
+        aiAssessment: aiAssessmentObj,
         weatherMatch: weatherResult,
         weatherDetails: weatherDetail,
-        priority: 'Visit',
+        weatherData: weatherDataObj,
+        priority: "Review",
         suggestedAction: suggestedAction,
-        status: 'Officer Review',
-        submissionTime: '16 Oct, 14:32',
+        status: "Submitted",
+        submissionTime: nowTimeStr,
         photosCount: capturedPhotos.length,
         gpsLocked: true,
         lat: location.lat,
         lng: location.lng,
         estimatedPayoutInr: 42500,
-        payoutStatus: 'Pending',
-        photos: capturedPhotos
+        payoutStatus: "Pending",
+        photos: capturedPhotos,
       };
       setClaimsList((prev) => [fallbackClaim, ...prev]);
       setActiveClaimId(fallbackClaim.id);
       setSelectedClaim(fallbackClaim);
     } finally {
       setIsSubmitting(false);
-      setView('farmer_tracker');
+      setView("farmer_tracker");
     }
   };
 
   const handleUpdateClaimStatus = (
     claimId: string,
-    status: Claim['status'],
-    priority?: Claim['priority'],
-    notes?: string
+    status: Claim["status"],
+    priority?: Claim["priority"],
+    notes?: string,
   ) => {
     setClaimsList((prev) =>
       prev.map((c) => {
         if (c.id === claimId) {
-          const isApproved = status === 'Approved';
+          const isApproved = status === "Approved";
           return {
             ...c,
             status,
             priority: priority || c.priority,
             officerNotes: notes || c.officerNotes,
             officerOverrideLogged: true,
-            payoutStatus: isApproved ? 'Disbursed to Bank' : c.payoutStatus
+            payoutStatus: isApproved ? "Disbursed to Bank" : c.payoutStatus,
           };
         }
         return c;
-      })
+      }),
     );
   };
 
   const handleLogout = async () => {
     await api.logout();
     setCurrentUser(null);
-    setView('role_select');
+    setView("role_select");
   };
 
   const handleLoginSuccess = (user: User) => {
@@ -256,7 +318,7 @@ export default function App() {
         view={view}
         setView={setView}
         language={language}
-        setLanguage={setLanguage}
+        setLanguage={handleSetLanguage}
         currentUser={currentUser}
         onLogout={handleLogout}
         onOpenPresentation={() => setIsPresentationOpen(true)}
@@ -265,7 +327,7 @@ export default function App() {
       {/* Main App Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6">
         {/* VIEW 0: GOVERNMENT SCHEME PROFILE & OVERVIEW (HOME) */}
-        {view === 'role_select' && (
+        {view === "role_select" && (
           <RoleSelect
             setView={setView}
             language={language}
@@ -275,7 +337,7 @@ export default function App() {
         )}
 
         {/* VIEW 1: DEDICATED FARMER LOGIN & REGISTRATION PORTAL */}
-        {view === 'farmer_login' && (
+        {view === "farmer_login" && (
           <FarmerLogin
             setView={setView}
             language={language}
@@ -284,8 +346,8 @@ export default function App() {
         )}
 
         {/* VIEW 2: COMPLETE FARMER DASHBOARD */}
-        {view === 'farmer_dashboard' && (
-          currentUser && currentUser.role === 'farmer' ? (
+        {view === "farmer_dashboard" &&
+          (currentUser && currentUser.role === "farmer" ? (
             <FarmerDashboard
               user={currentUser}
               language={language}
@@ -294,7 +356,7 @@ export default function App() {
               onSelectClaimToTrack={(claim) => {
                 setSelectedClaim(claim);
                 setActiveClaimId(claim.id);
-                setView('farmer_tracker');
+                setView("farmer_tracker");
               }}
             />
           ) : (
@@ -303,11 +365,10 @@ export default function App() {
               language={language}
               onLoginSuccess={handleLoginSuccess}
             />
-          )
-        )}
+          ))}
 
         {/* VIEW 3: DEDICATED OFFICER & SURVEYOR STAFF LOGIN PORTAL */}
-        {view === 'staff_login' && (
+        {view === "staff_login" && (
           <StaffLogin
             setView={setView}
             language={language}
@@ -316,8 +377,8 @@ export default function App() {
         )}
 
         {/* VIEW 4: SURVEYOR DASHBOARD */}
-        {view === 'surveyor_dashboard' && (
-          currentUser && currentUser.role === 'surveyor' ? (
+        {view === "surveyor_dashboard" &&
+          (currentUser && currentUser.role === "surveyor" ? (
             <SurveyorDashboard
               user={currentUser}
               language={language}
@@ -330,12 +391,11 @@ export default function App() {
               language={language}
               onLoginSuccess={handleLoginSuccess}
             />
-          )
-        )}
+          ))}
 
         {/* VIEW 5: OFFICER DASHBOARD */}
-        {view === 'officer_dashboard' && (
-          currentUser && currentUser.role === 'officer' ? (
+        {view === "officer_dashboard" &&
+          (currentUser && currentUser.role === "officer" ? (
             <OfficerDashboard
               user={currentUser}
               claims={claimsList}
@@ -354,11 +414,10 @@ export default function App() {
               language={language}
               onLoginSuccess={handleLoginSuccess}
             />
-          )
-        )}
+          ))}
 
         {/* SUB-FLOW: 72H FARMER LOSS INTIMATION */}
-        {view === 'farmer_report' && (
+        {view === "farmer_report" && (
           <FarmerReport
             peril={peril}
             setPeril={setPeril}
@@ -366,16 +425,16 @@ export default function App() {
             setCrop={setCrop}
             location={location}
             onLocationChange={handleLocationChange}
-            onStartCapture={() => setView('farmer_capture')}
+            onStartCapture={() => setView("farmer_capture")}
             language={language}
           />
         )}
 
         {/* SUB-FLOW: GUIDED LIVE CAMERA CAPTURE */}
-        {view === 'farmer_capture' && (
+        {view === "farmer_capture" && (
           <FarmerCapture
             location={location}
-            onBack={() => setView('farmer_report')}
+            onBack={() => setView("farmer_report")}
             onSubmitPhotos={handleSubmitPhotos}
             isSubmitting={isSubmitting}
             language={language}
@@ -383,15 +442,15 @@ export default function App() {
         )}
 
         {/* SUB-FLOW: FARMER CLAIM TRACKER */}
-        {view === 'farmer_tracker' && (
+        {view === "farmer_tracker" && (
           <FarmerTracker
             claim={selectedClaim}
-            onViewInOfficer={() => setView('officer_dashboard')}
+            onViewInOfficer={() => setView("officer_dashboard")}
             onLodgeNew={() => {
-              if (currentUser?.role === 'farmer') {
-                setView('farmer_dashboard');
+              if (currentUser?.role === "farmer") {
+                setView("farmer_dashboard");
               } else {
-                setView('farmer_report');
+                setView("farmer_report");
               }
             }}
             language={language}
@@ -402,13 +461,16 @@ export default function App() {
       {/* Official Government Portal Footer */}
       <footer className="py-6 bg-white border-t border-slate-200 text-center text-xs text-slate-500 space-y-2">
         <div className="font-semibold text-slate-700">
-          Pradhan Mantri Fasal Bima Yojana (PMFBY) • National Crop Insurance Portal
+          Pradhan Mantri Fasal Bima Yojana (PMFBY) • National Crop Insurance
+          Portal
         </div>
         <div>
-          Department of Agriculture & Farmers Welfare • Ministry of Agriculture & Farmers Welfare, Government of India
+          Department of Agriculture & Farmers Welfare • Ministry of Agriculture
+          & Farmers Welfare, Government of India
         </div>
         <div className="text-[11px] text-slate-400 font-mono">
-          Operational Guidelines Clause 14.2 (Localized Calamities) • 24x7 Kisan Call Centre: 14447 / 1800-180-1551
+          Operational Guidelines Clause 14.2 (Localized Calamities) • 24x7 Kisan
+          Call Centre: 14447 / 1800-180-1551
         </div>
       </footer>
 
