@@ -3,23 +3,20 @@ import { ViewMode, Language, User, VerifiedPolicyDossier } from '../types';
 import { translations } from '../translations';
 import { api } from '../api';
 import { RealLeafletMap } from './RealLeafletMap';
-import { PresentationViewerModal } from './PresentationViewerModal';
 import { 
   ShieldCheck, Clock, Camera, Search, Building2, 
   ChevronRight, ArrowRight, CheckCircle2, User as UserIcon, FileText, 
-  Phone, Landmark, Check, HelpCircle, Presentation, Download, 
-  ExternalLink, Layers, Monitor, Sparkles, AlertCircle, RefreshCw,
-  XCircle, MapPin, MapPinOff
+  Phone, Landmark, Check, HelpCircle, 
+  AlertCircle, RefreshCw, XCircle, MapPin
 } from 'lucide-react';
 
 interface RoleSelectProps {
   setView: (view: ViewMode) => void;
   language: Language;
   currentUser?: User | null;
-  onOpenPresentation?: () => void;
 }
 
-export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, currentUser, onOpenPresentation }) => {
+export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, currentUser }) => {
   const t = translations[language];
 
   const [searchQuery, setSearchQuery] = useState('89401');
@@ -28,15 +25,6 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, curre
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  const [showPresentation, setShowPresentation] = useState<boolean>(false);
-
-  const handleOpenPresentation = () => {
-    if (onOpenPresentation) {
-      onOpenPresentation();
-    } else {
-      setShowPresentation(true);
-    }
-  };
 
   const executeVerification = async (queryToVerify: string) => {
     const trimmed = queryToVerify.trim();
@@ -147,15 +135,6 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, curre
             <span className="mt-2 px-2.5 py-1 rounded-lg bg-emerald-800 text-white font-mono font-semibold text-[11px] shadow-2xs">
               {t.seasonTag}
             </span>
-            <button
-              type="button"
-              onClick={handleOpenPresentation}
-              className="mt-2.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition group"
-              title="View original PowerPoint presentation slides"
-            >
-              <Presentation className="w-3.5 h-3.5 text-amber-700 group-hover:scale-110 transition" />
-              <span>Original Slide Deck</span>
-            </button>
           </div>
         </div>
 
@@ -199,86 +178,7 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, curre
         </div>
       </div>
 
-      {/* 2. FarmProof Project Presentation Showcase Card */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-md border border-slate-700/80 space-y-6 relative overflow-hidden">
-        {/* Subtle decorative glow */}
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-bold font-mono">
-              <Presentation className="w-4 h-4 text-amber-400" />
-              <span>IMPACT TANK &apos;26 • ROUND 3 PROTOTYPE DECK</span>
-            </div>
-            
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              FarmProof Project Presentation
-            </h2>
-
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Explore our original Impact Tank &apos;26 Round 3 prototype presentation. Download the original FarmProof Round 3 prototype presentation preserving all 8 original slides, 72-hour reporting rule, 5-photo live camera evidence kit, and institutional verification architecture.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-mono text-slate-300">
-              <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>8 Original Slides</span>
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Unaltered Formatting &amp; Order</span>
-              </span>
-              <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Original .pptx Available</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Action Buttons: Download PPTX & View Slides */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 lg:w-72">
-            <a
-              href="/FarmProof_Round3_Prototype_Deck.pptx"
-              download="FarmProof_Round3_Prototype_Deck.pptx"
-              className="py-3 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-2.5 shadow-md hover:shadow-emerald-500/20 transition group"
-              title="Download FarmProof_Round3_Prototype_Deck.pptx"
-            >
-              <Download className="w-4 h-4 text-emerald-100 group-hover:translate-y-0.5 transition" />
-              <span>Download PPTX</span>
-            </a>
-
-            <button
-              type="button"
-              onClick={handleOpenPresentation}
-              className="py-3 px-5 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-2.5 border border-slate-600/60 shadow-sm transition"
-            >
-              <Presentation className="w-4 h-4 text-amber-400" />
-              <span>View Presentation Slides</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Mini Slides Strip Preview */}
-        <div 
-          onClick={handleOpenPresentation}
-          className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400 cursor-pointer group hover:text-white transition"
-          title="Click to launch interactive slide viewer"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono font-bold text-emerald-400">Slides Overview:</span>
-            <span className="text-[11px] text-slate-300 hidden sm:inline">
-              1. 72h Evidence Gap • 2. Functional MVP • 3. 6-Step Workflow • 4. 4 Implemented Screens • 5. Test Journey • 6. Evaluator Access • 7. 7-Day Sprint • 8. Post-Sprint Roadmap
-            </span>
-          </div>
-          <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition">
-            <span>Open Viewer</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
-      </div>
-
-      {/* 3. Beneficiary Farmer & Land Policy Verification Section */}
+      {/* 2. Beneficiary Farmer & Land Policy Verification Section */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-5">
         {/* Policy Search Bar */}
         <div className="space-y-3">
@@ -786,12 +686,6 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, curre
           <span>PMFBY Portal v2.4</span>
         </div>
       </div>
-
-      {/* Presentation Slide Deck Viewer Modal */}
-      <PresentationViewerModal
-        isOpen={showPresentation}
-        onClose={() => setShowPresentation(false)}
-      />
     </div>
   );
 };

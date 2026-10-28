@@ -7,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import {
   ViewMode,
   Language,
+  Theme,
   PerilType,
   CropType,
   Claim,
@@ -25,13 +26,41 @@ import { OfficerDashboard } from "./components/OfficerDashboard";
 import { FarmerReport } from "./components/FarmerReport";
 import { FarmerCapture } from "./components/FarmerCapture";
 import { FarmerTracker } from "./components/FarmerTracker";
-import { PresentationViewerModal } from "./components/PresentationViewerModal";
 
 export default function App() {
   // Current authenticated user session
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
-  const [isPresentationOpen, setIsPresentationOpen] = useState<boolean>(false);
+
+  // Central Theme System (Default: Light Mode)
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem("farmproof_theme");
+      if (saved === "dark" || saved === "light") return saved;
+    } catch {}
+    return "light";
+  });
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next: Theme = prev === "light" ? "dark" : "light";
+      try {
+        localStorage.setItem("farmproof_theme", next);
+      } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+      root.setAttribute("data-theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      root.setAttribute("data-theme", "light");
+    }
+  }, [theme]);
 
   // Initial View starts with Government Scheme Profile
   const [view, setView] = useState<ViewMode>("role_select");
@@ -321,7 +350,8 @@ export default function App() {
         setLanguage={handleSetLanguage}
         currentUser={currentUser}
         onLogout={handleLogout}
-        onOpenPresentation={() => setIsPresentationOpen(true)}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main App Container */}
@@ -332,7 +362,6 @@ export default function App() {
             setView={setView}
             language={language}
             currentUser={currentUser}
-            onOpenPresentation={() => setIsPresentationOpen(true)}
           />
         )}
 
@@ -473,12 +502,6 @@ export default function App() {
           Call Centre: 14447 / 1800-180-1551
         </div>
       </footer>
-
-      {/* Global Presentation Slide Deck Viewer Modal */}
-      <PresentationViewerModal
-        isOpen={isPresentationOpen}
-        onClose={() => setIsPresentationOpen(false)}
-      />
     </div>
   );
 }
