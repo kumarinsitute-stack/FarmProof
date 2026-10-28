@@ -4,11 +4,13 @@ import { api } from '../api';
 import { translations } from '../translations';
 import { PhotoRenderer } from './PhotoRenderer';
 import { RealLeafletMap } from './RealLeafletMap';
+import { calculate72HourSla } from '../services/offlineQueue';
 import { 
   Building2, Search, Filter, CheckCircle2, AlertTriangle, 
   Clock, MapPin, CloudRain, ShieldCheck, ChevronRight, Check,
   AlertCircle, XCircle, FileText, ArrowRight, Eye, User as UserIcon,
-  UserCheck, RefreshCw, LogOut, CheckSquare, Compass, Send, FileCheck
+  UserCheck, RefreshCw, LogOut, CheckSquare, Compass, Send, FileCheck,
+  Map, List, BarChart3
 } from 'lucide-react';
 
 interface OfficerDashboardProps {
@@ -37,6 +39,12 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
   const [surveyors, setSurveyors] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Layout view mode (List vs Map Cluster)
+  const [viewTab, setViewTab] = useState<'queue' | 'map'>('queue');
+  const [showInstitutionalReport, setShowInstitutionalReport] = useState(false);
+  const [institutionalData, setInstitutionalData] = useState<any>(null);
+  const [loadingInstitution, setLoadingInstitution] = useState(false);
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,6 +117,19 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
     }));
   };
 
+  const loadInstitutionalReport = async () => {
+    setLoadingInstitution(true);
+    try {
+      const data = await api.getInstitutionalUsageReport();
+      setInstitutionalData(data);
+      setShowInstitutionalReport(true);
+    } catch (err: any) {
+      alert('Could not load institutional report: ' + (err?.message || 'Network error'));
+    } finally {
+      setLoadingInstitution(false);
+    }
+  };
+
   // Filtered queue
   const filteredClaims = claimsList.filter((claim) => {
     const matchesSearch = 
@@ -117,7 +138,14 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
       claim.village.toLowerCase().includes(searchTerm.toLowerCase()) ||
       claim.surveyNumber.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesPriority = filterPriority === 'all' || claim.priority === filterPriority;
+    let matchesPriority = true;
+    if (filterPriority === 'UrgentSLA') {
+      const sla = calculate72HourSla(claim.submissionTime);
+      matchesPriority = sla.isUrgent;
+    } else if (filterPriority !== 'all') {
+      matchesPriority = claim.priority === filterPriority;
+    }
+
     const matchesStatus = filterStatus === 'all' || claim.status === filterStatus;
 
     return matchesSearch && matchesPriority && matchesStatus;
@@ -283,7 +311,6 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -298,6 +325,54 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
               <option value="Rejected">Rejected</option>
             </select>
 
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="px-3 py-2.5 rounded-xl border border-slate-300 text-xs bg-white text-slate-700 font-semibold"
+            >
+              <option value="all">All Priorities & SLAs</option>
+              <option value="UrgentSLA">🚨 Urgent: &lt;24h in 72h Window</option>
+              <option value="Verified">Verified (Fast-track)</option>
+              <option value="Review">Review Required</option>
+              <option value="Visit">Visit Recommended</option>
+            </select>
+
+            {/* View Mode Toggle: Queue List vs Cadastral Map */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setViewTab('queue')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                  viewTab === 'queue' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Queue</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewTab('map')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition ${
+                  viewTab === 'map' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Map className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Map</span>
+              </button>
+            </div>
+
+            {/* Institutional Usage & Revenue Model Report Button (Phase 10) */}
+            <button
+              type="button"
+              onClick={loadInstitutionalReport}
+              disabled={loadingInstitution}
+              className="px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition shrink-0"
+              title="View Institutional Tier & Usage Report"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{loadingInstitution ? 'Loading...' : 'Institutional Report'}</span>
+            </button>
+
             <button
               type="button"
               onClick={loadData}
@@ -308,7 +383,6 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
             </button>
           </div>
         </div>
-      </div>
 
       {actionSuccessMsg && (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs flex items-center gap-2.5 shadow-xs">
@@ -319,66 +393,102 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
 
       {/* 2. Main Two-Column Layout */}
       <div className="grid lg:grid-cols-12 gap-6">
-        {/* Left Column (5 Cols): Claims Queue */}
+        {/* Left Column (5 Cols): Claims Queue or Cluster Map */}
         <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Submitted Claims Queue
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              {viewTab === 'map' ? (
+                <>
+                  <Map className="w-4 h-4 text-emerald-700" />
+                  <span>Cadastral Cluster Map</span>
+                </>
+              ) : (
+                <>
+                  <List className="w-4 h-4 text-slate-700" />
+                  <span>Submitted Claims Queue</span>
+                </>
+              )}
             </span>
             <span className="text-xs font-mono text-slate-500 font-bold">
-              {filteredClaims.length} Claims
+              {filteredClaims.length} Claims Plotted
             </span>
           </div>
 
-          <div className="space-y-2.5 max-h-[750px] overflow-y-auto pr-1">
-            {filteredClaims.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-500">
-                No claims match your search criteria.
+          {viewTab === 'map' ? (
+            <div className="space-y-3">
+              <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
+                <RealLeafletMap
+                  claims={filteredClaims}
+                  selectedClaimId={selectedClaim?.id}
+                  onSelectClaim={selectClaim}
+                  height="h-[600px]"
+                />
               </div>
-            ) : (
-              filteredClaims.map((claim) => (
-                <div
-                  key={claim.id}
-                  onClick={() => selectClaim(claim)}
-                  className={`p-4 rounded-2xl border transition cursor-pointer space-y-2 ${
-                    selectedClaim?.id === claim.id
-                      ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-500/20'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-slate-900 text-xs">{claim.id}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
-                      claim.status === 'Approved' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                      claim.status === 'Rejected' ? 'bg-rose-100 text-rose-800 border-rose-300' :
-                      claim.status === 'Correction Required' ? 'bg-purple-100 text-purple-800 border-purple-300' :
-                      claim.status.includes('Survey') ? 'bg-sky-100 text-sky-800 border-sky-300' :
-                      'bg-amber-100 text-amber-800 border-amber-300'
-                    }`}>
-                      {claim.status}
-                    </span>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
-                      <span>{claim.farmerName}</span>
-                      <span className="font-mono text-slate-700">₹{claim.estimatedPayoutInr?.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="text-xs text-slate-600">
-                      {claim.crop} • {claim.cause} • {claim.village}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono border-t border-slate-100 pt-1.5">
-                    <span>Survey {claim.surveyNumber}</span>
-                    <span className="text-emerald-800 font-semibold font-sans">
-                      {claim.assignedSurveyorName ? `Surveyor: ${claim.assignedSurveyorName}` : 'Survey Unassigned'}
-                    </span>
-                  </div>
+              <p className="text-[11px] text-slate-500 text-center font-medium">
+                Click any status pin on the map to inspect the full claim dossier on the right panel.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5 max-h-[750px] overflow-y-auto pr-1">
+              {filteredClaims.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-500">
+                  No claims match your search criteria.
                 </div>
-              ))
-            )}
-          </div>
+              ) : (
+                filteredClaims.map((claim) => {
+                  const sla = calculate72HourSla(claim.submissionTime);
+                  return (
+                    <div
+                      key={claim.id}
+                      onClick={() => selectClaim(claim)}
+                      className={`p-4 rounded-2xl border transition cursor-pointer space-y-2 ${
+                        selectedClaim?.id === claim.id
+                          ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-500/20'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-slate-900 text-xs">{claim.id}</span>
+                        <div className="flex items-center gap-1.5">
+                          {sla.isUrgent && claim.status !== 'Approved' && claim.status !== 'Rejected' && (
+                            <span className="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 text-[9px] font-bold font-mono border border-rose-300 animate-pulse">
+                              ⏳ {sla.remainingHours}h left
+                            </span>
+                          )}
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
+                            claim.status === 'Approved' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                            claim.status === 'Rejected' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                            claim.status === 'Correction Required' ? 'bg-purple-100 text-purple-800 border-purple-300' :
+                            claim.status.includes('Survey') ? 'bg-sky-100 text-sky-800 border-sky-300' :
+                            'bg-amber-100 text-amber-800 border-amber-300'
+                          }`}>
+                            {claim.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-bold text-slate-900 flex items-center justify-between">
+                          <span>{claim.farmerName}</span>
+                          <span className="font-mono text-slate-700">₹{claim.estimatedPayoutInr?.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          {claim.crop} • {claim.cause} • {claim.village}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono border-t border-slate-100 pt-1.5">
+                        <span>Survey {claim.surveyNumber}</span>
+                        <span className="text-emerald-800 font-semibold font-sans">
+                          {claim.assignedSurveyorName ? `Surveyor: ${claim.assignedSurveyorName}` : 'Survey Unassigned'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Column (7 Cols): Claim Details, Survey Review, Surveyor Assignment, & Sanctions */}
@@ -736,16 +846,29 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
 
             {/* Compensation Sanction Amount Input (for Approval) */}
             {decisionModal.type === 'approve' && (
-              <div>
-                <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">
-                  Sanctioned Payout Amount (INR)
-                </label>
-                <input
-                  type="number"
-                  value={decisionModal.sanctionedAmount}
-                  onChange={(e) => setDecisionModal({ ...decisionModal, sanctionedAmount: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono font-bold text-sm text-emerald-800"
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block mb-1">
+                    Sanctioned Payout Amount (INR)
+                  </label>
+                  <input
+                    type="number"
+                    value={decisionModal.sanctionedAmount}
+                    onChange={(e) => setDecisionModal({ ...decisionModal, sanctionedAmount: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono font-bold text-sm text-emerald-800"
+                  />
+                </div>
+
+                {/* Mandatory PMFBY DBT Educational Notice */}
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-[11px] text-amber-800 uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-amber-700" />
+                    <span>SIMULATED DBT DEMO / TEST GATEWAY</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-amber-900">
+                    Educational prototype simulation. Sanction approval updates the claim state to "Approved" and logs the decision in the permanent audit trail. Actual monetary transfer occurs via Government of India PFMS banking channels, not directly through FarmProof.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -794,6 +917,104 @@ export const OfficerDashboard: React.FC<OfficerDashboardProps> = ({
                 }`}
               >
                 {actionLoading ? 'Sanctioning...' : 'Authorize Decision'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHASE 10: INSTITUTIONAL USAGE & REVENUE MODEL MODAL */}
+      {showInstitutionalReport && institutionalData && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-900 text-emerald-400 flex items-center justify-center font-bold">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold font-mono border border-emerald-200 uppercase">
+                    Phase 10 • Institutional Model
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900">Institutional Usage &amp; Metering Report</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInstitutionalReport(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Organization Profile */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Account / Organization</span>
+              <div className="font-bold text-slate-900 text-sm">{institutionalData.organization}</div>
+              <div className="text-slate-500 font-medium">{institutionalData.division}</div>
+              <div className="flex items-center gap-3 pt-2 text-[11px] font-mono">
+                <span className="text-emerald-700 font-bold">Tier: {institutionalData.activeTier}</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-600">Status: {institutionalData.billingStatus}</span>
+              </div>
+            </div>
+
+            {/* Metered Claims & AI Metrics */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
+                Billing Cycle Usage &amp; Activity Metrics
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-semibold text-slate-400 block uppercase">Claims Ingested</span>
+                  <strong className="text-xl font-black text-slate-900 font-mono">
+                    {institutionalData.metrics?.totalClaimsIngested || 0}
+                  </strong>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-semibold text-slate-400 block uppercase">AI Vision Runs</span>
+                  <strong className="text-xl font-black text-emerald-700 font-mono">
+                    {institutionalData.metrics?.aiVisionEvaluations || 0}
+                  </strong>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-semibold text-slate-400 block uppercase">Weather Checks</span>
+                  <strong className="text-xl font-black text-sky-700 font-mono">
+                    {institutionalData.metrics?.weatherCorroborations || 0}
+                  </strong>
+                </div>
+                <div className="p-3 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <span className="text-[10px] font-semibold text-slate-400 block uppercase">Surveys Assigned</span>
+                  <strong className="text-xl font-black text-amber-700 font-mono">
+                    {institutionalData.metrics?.fieldSurveysDispatched || 0}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Commercial Model Principles */}
+            <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-2 text-emerald-950">
+              <span className="font-bold uppercase tracking-wider text-[11px] block text-emerald-900">
+                Commercial Readiness &amp; Fair Model
+              </span>
+              <div className="space-y-1 text-[11px] leading-relaxed">
+                <div>• <strong>Farmer Access:</strong> {institutionalData.commercialModel?.farmerFee}</div>
+                <div>• <strong>Institutional Licensing:</strong> {institutionalData.commercialModel?.institutionalModel}</div>
+                <div>• <strong>Proposed Pilot Pricing:</strong> {institutionalData.commercialModel?.pilotPricingProposal}</div>
+              </div>
+              <p className="text-[10px] text-emerald-800 italic pt-1 border-t border-emerald-200/80">
+                {institutionalData.notes}
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowInstitutionalReport(false)}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs"
+              >
+                Close Report
               </button>
             </div>
           </div>

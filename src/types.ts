@@ -44,8 +44,12 @@ export interface PhotoChecklistItem {
 
 export interface CapturedPhoto {
   id: number;
+  slotNumber?: number; // Exactly 1, 2, 3, 4, or 5
+  slotKey?: 'wide_field' | 'root_damage' | 'canopy_close' | 'cadastral_landmark' | 'farmer_id';
   label: string;
-  url: string;
+  url: string; // Active display URL (watermarked derivative)
+  originalUrl?: string; // Unmodified original photo URL
+  watermarkedUrl?: string; // Watermarked derivative URL
   timestamp: string;
   date: string;
   gps: string;
@@ -53,6 +57,14 @@ export interface CapturedPhoto {
   tamperChecked: boolean;
   sampleType?: string;
   detectedDamage?: string;
+  captureMethod?: 'live_camera' | 'gallery_upload';
+  isLiveCapture?: boolean;
+  blurScore?: number;
+  isBlurry?: boolean;
+  qualityStatus?: 'Good' | 'Warning' | 'Rejected';
+  qualityReason?: string;
+  hash?: string;
+  replacedAudit?: { previousUrl: string; replacedAt: string; reason?: string }[];
 }
 
 export interface ApplicationDocument {
@@ -90,6 +102,48 @@ export interface HistoryItem {
   notes: string;
 }
 
+export interface AIAssessmentData {
+  available: boolean;
+  damageBand?: 'Marginal' | 'Moderate' | 'Severe';
+  severityRecommendation?: 'Marginal' | 'Moderate' | 'Severe';
+  explanation?: string;
+  damageDescription?: string;
+  likelyCause?: string;
+  confidence?: number;
+  lodgingPercent?: number;
+  leafTearSeverity?: string;
+  plantCountQuadrat?: string;
+  boundaryIntegrity?: string;
+  suggestedAction?: string;
+  modelSummary?: string;
+  evaluatedAt?: string;
+  provider?: string;
+  advisoryNotice: string;
+  insufficientEvidence?: boolean;
+  unclearReason?: string;
+}
+
+export interface WeatherData {
+  available: boolean;
+  recordedRainMm?: number;
+  precipitationMm?: number;
+  maxWindKmh?: number;
+  windSpeedMaxKmh?: number;
+  tempMaxC?: number;
+  weatherCode?: number;
+  weatherDesc?: string;
+  queryDate?: string;
+  location?: string;
+  matchScore?: 'Match' | 'Partial' | 'No match' | 'Unavailable';
+  corroboratedAt?: string;
+  disclaimer: string;
+  units?: {
+    precipitation: string;
+    windSpeed: string;
+    temperature: string;
+  };
+}
+
 export interface Claim {
   id: string;
   farmerId?: string;
@@ -109,10 +163,12 @@ export interface Claim {
   category?: string;
   crop: CropType | string;
   cause: PerilType | string;
+  incidentDate?: string;
   description?: string;
   aiDamage: 'Severe' | 'Moderate' | 'Low';
   aiConfidence: number; // 0 to 100
   damagePercentage: number;
+  aiAssessment?: AIAssessmentData;
   weatherMatch: 'Match' | 'Partial' | 'No match';
   weatherDetails: string;
   weatherStats?: {
@@ -121,6 +177,7 @@ export interface Claim {
     historicalMeanRainMm: number;
     hailRadarDetected: boolean;
   };
+  weatherData?: WeatherData;
   priority: 'Verified' | 'Review' | 'Visit';
   suggestedAction: string;
   status: 
@@ -163,6 +220,12 @@ export interface Claim {
   payoutStatus?: 'Pending' | 'Approved' | 'Disbursed to Bank' | 'Rejected';
   estimatedPayoutInr: number;
   sanctionedPayoutInr?: number;
+  sanctionDetails?: {
+    sanctionOrderNumber: string;
+    sanctionedAmountInr: number;
+    sanctionDate: string;
+    officerName: string;
+  };
   photos: CapturedPhoto[];
   documents?: ApplicationDocument[];
   history?: HistoryItem[];

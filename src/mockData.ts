@@ -1,45 +1,45 @@
 import { Claim, PhotoChecklistItem } from './types';
 
-// Authentic 5-photo checklist from FarmProof specs & PMFBY guidelines
+// Authentic 5-photo statutory evidence kit from FarmProof specs & PMFBY guidelines
 export const REQUIRED_PHOTOS: PhotoChecklistItem[] = [
   {
     id: 1,
-    label: "Wide Plot View",
-    tip: "Hold phone at eye level showing damaged perimeter & horizon",
-    purpose: "Establishes macro scale and perimeter lodging/flooding extent",
+    label: "Wide Field Overview",
+    tip: "Hold phone at eye level showing the full damaged perimeter & horizon (5-10m panorama)",
+    purpose: "Establishes macro scale and overall perimeter lodging/flooding extent",
     minDistance: "Eye level (5-10m panorama)",
     defaultImage: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1000&q=80"
   },
   {
     id: 2,
-    label: "Close-up of Damaged Leaves",
-    tip: "Hold phone 30 cm away showing lodging/tearing",
-    purpose: "Micro-texture verification for hail hole vs pest vs rot pattern",
+    label: "Root Inundation & Soil Base",
+    tip: "Capture standing water, submerged stem base, or soil scouring around root crowns",
+    purpose: "Verifies water depth, submergence duration, or physical stem lodging trauma at soil line",
+    minDistance: "Ground-level 0.5m perspective",
+    defaultImage: "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1000&q=80"
+  },
+  {
+    id: 3,
+    label: "Crop Canopy Close-up",
+    tip: "Hold phone 30 cm away showing leaf laceration, lodging trauma, or fruit/boll shedding",
+    purpose: "Micro-texture verification for hail perforations vs pest vs root disease pattern",
     minDistance: "30 cm macro distance",
     defaultImage: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=1000&q=80"
   },
   {
-    id: 3,
-    label: "Plant Count Sample",
-    tip: "1m x 1m quadrant showing damaged vs standing stems",
-    purpose: "Yield loss mathematical sampling required by insurance actuarial tables",
-    minDistance: "Top-down 1m x 1m frame",
-    defaultImage: "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1000&q=80"
-  },
-  {
     id: 4,
-    label: "Boundary & Landmark",
-    tip: "Capture fence, canal or tree line bordering the plot",
-    purpose: "Fraud prevention: anchors photo set to cadastral survey map coordinates",
+    label: "Cadastral Landmark Reference",
+    tip: "Capture permanent boundary fence, canal bank, survey stone, or road bordering the plot",
+    purpose: "Fraud prevention: anchors photo set to official cadastral village map & survey parcel",
     minDistance: "Fixed boundary marker",
     defaultImage: "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1000&q=80"
   },
   {
     id: 5,
-    label: "Undamaged Comparison",
-    tip: "Show adjacent healthy patch or border edge",
-    purpose: "Baseline control calibration to verify unseasonal vs baseline crop growth",
-    minDistance: "Border comparison",
+    label: "Farmer Identification & Self-Verification",
+    tip: "Beneficiary photograph standing in front of the damaged parcel",
+    purpose: "Statutory beneficiary identity anchoring to prevent proxy or fraudulent claims",
+    minDistance: "Portrait with field background",
     defaultImage: "https://images.unsplash.com/photo-1536657464919-892534f60d6e?auto=format&fit=crop&w=1000&q=80"
   }
 ];

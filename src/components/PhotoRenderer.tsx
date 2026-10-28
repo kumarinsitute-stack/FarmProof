@@ -20,7 +20,8 @@ export const PhotoRenderer: React.FC<PhotoRendererProps> = ({
   const [imageError, setImageError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const isHttpOrData = photo.url && (photo.url.startsWith('data:image/') || photo.url.startsWith('blob:') || photo.url.startsWith('http'));
+  const displayUrl = photo.watermarkedUrl || photo.url;
+  const isHttpOrData = displayUrl && (displayUrl.startsWith('data:image/') || displayUrl.startsWith('blob:') || displayUrl.startsWith('http') || displayUrl.startsWith('/uploads'));
 
   const handleOpenZoom = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,7 +40,7 @@ export const PhotoRenderer: React.FC<PhotoRendererProps> = ({
       >
         {isHttpOrData && !imageError ? (
           <img
-            src={photo.url}
+            src={displayUrl}
             alt={photo.label}
             onError={() => setImageError(true)}
             referrerPolicy="no-referrer"
