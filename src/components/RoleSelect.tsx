@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { ViewMode, Language, User } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ViewMode, Language, User, VerifiedPolicyDossier } from '../types';
 import { translations } from '../translations';
+import { api } from '../api';
 import { RealLeafletMap } from './RealLeafletMap';
 import { PresentationViewerModal } from './PresentationViewerModal';
 import { 
   ShieldCheck, Clock, Camera, Search, Building2, 
   ChevronRight, ArrowRight, CheckCircle2, User as UserIcon, FileText, 
   Phone, Landmark, Check, HelpCircle, Presentation, Download, 
-  ExternalLink, Layers, Monitor, Sparkles
+  ExternalLink, Layers, Monitor, Sparkles, AlertCircle, RefreshCw,
+  XCircle, MapPin, MapPinOff
 } from 'lucide-react';
 
 interface RoleSelectProps {
@@ -20,8 +22,11 @@ interface RoleSelectProps {
 export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, currentUser, onOpenPresentation }) => {
   const t = translations[language];
 
-  const [searchQuery, setSearchQuery] = useState('PMFBY/TS/WR/2026/89401');
-  const [isSearched, setIsSearched] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('89401');
+  const [verifiedDossier, setVerifiedDossier] = useState<VerifiedPolicyDossier | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showPresentation, setShowPresentation] = useState<boolean>(false);
 
@@ -33,9 +38,46 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, curre
     }
   };
 
+  const executeVerification = async (queryToVerify: string) => {
+    const trimmed = queryToVerify.trim();
+    if (!trimmed) {
+      setSearchError(t.searchFieldEmptyError);
+      setSearchSuccess(null);
+      setVerifiedDossier(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+    setSearchSuccess(null);
+
+    try {
+      const res = await api.verifyPolicy(trimmed);
+      setVerifiedDossier(res);
+      setSearchSuccess(t.policyFoundSuccess);
+      setSearchError(null);
+    } catch (err: any) {
+      setVerifiedDossier(null); // Never display stale result on failed search
+      setSearchError(err.message || t.policyNotFoundDesc);
+      setSearchSuccess(null);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Automatically verify the default sample policy on mount
+  useEffect(() => {
+    executeVerification('89401');
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearched(true);
+    executeVerification(searchQuery);
+  };
+
+  const handleQuickPolicySelect = (policyCode: string) => {
+    setSearchQuery(policyCode);
+    executeVerification(policyCode);
   };
 
   const faqs = [
@@ -238,92 +280,324 @@ export const RoleSelect: React.FC<RoleSelectProps> = ({ setView, language, curre
 
       {/* 3. Beneficiary Farmer & Land Policy Verification Section */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold">
-              <UserIcon className="w-5 h-5" />
+        {/* Policy Search Bar */}
+        <div className="space-y-3">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+              <input
+                id="pmfby-policy-search-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t.searchPolicyPlaceholder}
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 transition"
+                  title={t.clearSearchBtn}
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                {t.farmerProfileHeader}
-              </div>
-              <div className="text-base sm:text-lg font-bold text-slate-900">
-                {t.farmerNameLocation}
-              </div>
-            </div>
-          </div>
+            <button
+              id="verify-policy-btn"
+              type="submit"
+              disabled={isSearching}
+              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+            >
+              {isSearching ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>{t.verifyingPolicyText}</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{t.searchBtn}</span>
+                </>
+              )}
+            </button>
+          </form>
 
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-800 font-mono bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-              <span>{t.aadhaarVerifiedTag}</span>
-            </span>
+          {/* Quick Test Demo Policy Chips */}
+          <div className="flex items-center gap-2 flex-wrap text-[11px] pt-1">
+            <span className="font-semibold text-slate-500">{t.quickTestLabel}</span>
+            <button
+              type="button"
+              onClick={() => handleQuickPolicySelect('89401')}
+              className={`px-2.5 py-1 rounded-lg border font-mono font-semibold transition cursor-pointer ${
+                searchQuery === '89401'
+                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+              }`}
+            >
+              89401 (Ramulu • Polygon)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPolicySelect('89402')}
+              className={`px-2.5 py-1 rounded-lg border font-mono font-semibold transition cursor-pointer ${
+                searchQuery === '89402'
+                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+              }`}
+            >
+              89402 (Lakshmi • Point GPS)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPolicySelect('89403')}
+              className={`px-2.5 py-1 rounded-lg border font-mono font-semibold transition cursor-pointer ${
+                searchQuery === '89403'
+                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+              }`}
+            >
+              89403 (Srinivas • Flood)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPolicySelect('65104')}
+              className={`px-2.5 py-1 rounded-lg border font-mono font-semibold transition cursor-pointer ${
+                searchQuery === '65104'
+                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+              }`}
+            >
+              65104 (Suresh • Maize Polygon)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPolicySelect('99001')}
+              className={`px-2.5 py-1 rounded-lg border font-mono font-semibold transition cursor-pointer ${
+                searchQuery === '99001'
+                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+              }`}
+            >
+              99001 (Mallesh • No GPS)
+            </button>
           </div>
         </div>
 
-        {/* Policy Search Bar */}
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t.searchPolicyPlaceholder}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600"
-            />
+        {/* Verification Status Alerts */}
+        {searchSuccess && verifiedDossier && (
+          <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">{searchSuccess}</span>
+              <span className="font-mono text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200">
+                {verifiedDossier.policyNumber}
+              </span>
+            </div>
+            <span className="text-[10px] text-emerald-700 font-medium hidden sm:inline">
+              Source: {verifiedDossier.source}
+            </span>
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition"
-          >
-            {t.searchBtn}
-          </button>
-        </form>
+        )}
 
-        {/* Farmer Cadastre Cards & Real Interactive Map */}
-        {isSearched && (
-          <div className="grid md:grid-cols-3 gap-5 pt-2">
-            {/* Registered Land Records */}
-            <div className="space-y-2.5 text-xs font-mono md:col-span-1">
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.policyNoLabel}</span>
-                <span className="font-bold text-slate-900 text-xs">PMFBY/TS/WR/2026/89401</span>
+        {searchError && (
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold block">{t.policyNotFound}</span>
+              <span className="text-[11px] text-rose-700">{searchError}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Farmer Profile Header */}
+        {verifiedDossier && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-800 font-bold shrink-0 shadow-2xs">
+                <UserIcon className="w-5 h-5" />
               </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.cadastralSurveyLabel}</span>
-                <span className="font-bold text-slate-900 text-xs">Survey No. 412/A (Khasra 884)</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.insuredCropLabel}</span>
-                <span className="font-bold text-emerald-800 text-xs">Paddy (Kharif Season)</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.sumInsuredLabel}</span>
-                <span className="font-bold text-slate-900 text-xs">₹50,400 (₹42,000 / ha)</span>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  {t.farmerProfileHeader}
+                </div>
+                <div className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                  {verifiedDossier.farmer.name} • {verifiedDossier.farmer.village}, {verifiedDossier.farmer.district}, {verifiedDossier.farmer.state}
+                </div>
               </div>
             </div>
 
-            {/* Embedded Cadastral Plot Map */}
-            <div className="md:col-span-2 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-700">Registered Cadastral Boundary (Warangal Rural)</span>
-                <span className="text-[11px] text-emerald-700 font-mono font-semibold">17.9689° N, 79.5941° E</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Aadhaar Verification Status (Properly Distinguishing Demo vs Real) */}
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-xl border ${
+                  verifiedDossier.farmer.isDemoRecord
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : verifiedDossier.farmer.aadhaarVerified
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+                title={verifiedDossier.farmer.isDemoRecord ? t.demoNotice : t.realVerifiedNotice}
+              >
+                {verifiedDossier.farmer.aadhaarVerified ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                ) : (
+                  <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                )}
+                <span>
+                  {verifiedDossier.farmer.isDemoRecord
+                    ? t.aadhaarDemoVerified
+                    : verifiedDossier.farmer.aadhaarVerified
+                    ? t.aadhaarRealVerified
+                    : t.aadhaarPending}
+                </span>
+              </span>
+
+              {/* Land Records Verification Status */}
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded-xl border ${
+                  verifiedDossier.farmer.isDemoRecord
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : verifiedDossier.farmer.landRecordsVerified
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                }`}
+              >
+                <Landmark className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                <span>
+                  {verifiedDossier.farmer.isDemoRecord
+                    ? t.landDemoVerified
+                    : verifiedDossier.farmer.landRecordsVerified
+                    ? t.landRealVerified
+                    : t.landPending}
+                </span>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Farmer Cadastre Cards & Real Interactive Map */}
+        {verifiedDossier ? (
+          <div className="grid md:grid-cols-3 gap-5 pt-2">
+            {/* Left 1 Col: Registered Land Records */}
+            <div className="space-y-2.5 text-xs font-mono md:col-span-1">
+              {/* Policy Number (CRITICAL: matches exactly) */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.policyNoLabel}</span>
+                <span className="font-bold text-slate-900 text-xs break-all">{verifiedDossier.policyNumber}</span>
               </div>
-              <div className="rounded-2xl overflow-hidden border border-slate-200 h-56 shadow-inner">
+
+              {/* Cadastral Survey / Khasra */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.cadastralSurveyLabel}</span>
+                <span className="font-bold text-slate-900 text-xs">
+                  Survey No. {verifiedDossier.land.surveyNumber} {verifiedDossier.land.khasraNumber !== 'Not available' ? `(${verifiedDossier.land.khasraNumber})` : ''}
+                </span>
+              </div>
+
+              {/* Insured Crop & Season */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.insuredCropLabel}</span>
+                <span className="font-bold text-emerald-800 text-xs">
+                  {verifiedDossier.land.crop} ({verifiedDossier.land.season})
+                </span>
+              </div>
+
+              {/* Area of Insured Land */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.landAreaLabel}</span>
+                <span className="font-bold text-slate-900 text-xs">{verifiedDossier.land.area}</span>
+              </div>
+
+              {/* Sum Insured */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.sumInsuredLabel}</span>
+                <span className="font-bold text-slate-900 text-xs">
+                  {verifiedDossier.land.sumInsured} {verifiedDossier.land.sumInsuredRate !== 'Not available' ? `(${verifiedDossier.land.sumInsuredRate})` : ''}
+                </span>
+              </div>
+
+              {/* Village & Location */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-slate-500 block text-[10px] font-sans font-medium">{t.villageLocationLabel}</span>
+                <span className="font-bold text-slate-700 text-xs">
+                  {verifiedDossier.land.village}, {verifiedDossier.land.district}
+                </span>
+              </div>
+            </div>
+
+            {/* Right 2 Cols: Embedded Cadastral Plot Map */}
+            <div className="md:col-span-2 space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800">
+                    {verifiedDossier.land.hasGpsLocation
+                      ? `${verifiedDossier.land.village} Cadastre (${verifiedDossier.land.district})`
+                      : 'Cadastre Ground Survey Pending'}
+                  </span>
+                  {/* Boundary status badge */}
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      verifiedDossier.land.hasBoundaryPolygon
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : verifiedDossier.land.hasGpsLocation
+                        ? 'bg-amber-100 text-amber-800 border-amber-300'
+                        : 'bg-slate-100 text-slate-700 border-slate-300'
+                    }`}
+                  >
+                    {verifiedDossier.land.hasBoundaryPolygon
+                      ? t.boundaryDigitizedTag
+                      : verifiedDossier.land.hasGpsLocation
+                      ? t.boundaryUnavailableTag
+                      : t.boundaryUnsurveyedTag}
+                  </span>
+                </div>
+
+                {verifiedDossier.land.hasGpsLocation && verifiedDossier.land.lat && verifiedDossier.land.lng && (
+                  <span className="text-[11px] text-emerald-700 font-mono font-semibold">
+                    {verifiedDossier.land.lat.toFixed(4)}° N, {verifiedDossier.land.lng.toFixed(4)}° E
+                  </span>
+                )}
+              </div>
+
+              <div className="rounded-2xl overflow-hidden border border-slate-200 h-64 sm:h-72 shadow-inner">
                 <RealLeafletMap
-                  lat={17.9689}
-                  lng={79.5941}
-                  accuracy={3.2}
+                  lat={verifiedDossier.land.lat}
+                  lng={verifiedDossier.land.lng}
+                  accuracy={verifiedDossier.land.gpsAccuracyMeters}
+                  boundaryCoords={verifiedDossier.land.boundaryCoordinates}
+                  hasBoundaryPolygon={verifiedDossier.land.hasBoundaryPolygon}
+                  noCoordinates={!verifiedDossier.land.hasGpsLocation}
+                  markerInfo={{
+                    farmerName: verifiedDossier.farmer.name,
+                    surveyNumber: verifiedDossier.land.surveyNumber,
+                    policyNumber: verifiedDossier.policyNumber,
+                    village: verifiedDossier.land.village,
+                    crop: verifiedDossier.land.crop
+                  }}
                   interactive={true}
-                  height="h-56"
+                  height="h-64 sm:h-72"
                 />
               </div>
             </div>
           </div>
+        ) : (
+          !isSearching && (
+            <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
+              <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center mx-auto mb-2">
+                <Search className="w-5 h-5" />
+              </div>
+              <h4 className="font-bold text-slate-800 text-xs sm:text-sm">
+                {searchError ? t.policyNotFound : 'No Active Policy Selected'}
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                {searchError
+                  ? t.policyNotFoundDesc
+                  : 'Enter a valid PMFBY policy number above or click one of the sample demo policies to verify coverage and view the cadastral plot map.'}
+              </p>
+            </div>
+          )
         )}
       </div>
 

@@ -241,3 +241,41 @@ export interface AppNotification {
   read: boolean;
   timestamp: string;
 }
+
+export interface VerifiedPolicyDossier {
+  found: boolean;
+  policyNumber: string;
+  farmer: {
+    id: string;
+    name: string;
+    phone?: string;
+    village: string;
+    district: string;
+    state: string;
+    aadhaar: string;
+    aadhaarVerified: boolean;
+    aadhaarVerificationStatus: string;
+    landRecordsVerified: boolean;
+    landRecordsVerificationStatus: string;
+    isDemoRecord: boolean;
+  };
+  land: {
+    surveyNumber: string;
+    khasraNumber: string;
+    crop: string;
+    season: string;
+    area: string;
+    sumInsured: string;
+    sumInsuredRate: string;
+    village: string;
+    district: string;
+    state: string;
+    lat: number | null;
+    lng: number | null;
+    gpsAccuracyMeters: number;
+    boundaryCoordinates: [number, number][] | null;
+    hasBoundaryPolygon: boolean;
+    hasGpsLocation: boolean;
+  };
+  source: string;
+}

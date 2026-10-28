@@ -81,7 +81,12 @@ app_payload = {
     'village': 'Nallabelly',
     'surveyNumber': '412/A',
     'description': 'Heavy inundation caused 80% submerged bolls.',
-    'photos': [{'id': 1, 'label': 'Flood Evidence', 'url': up_res['url'], 'gps': '17.9689 N, 79.5941 E'}]
+    'lat': 17.9689,
+    'lng': 79.5941,
+    'photos': [
+        {'id': i, 'slotNumber': i, 'label': f'Statutory Photo Slot {i}', 'url': up_res['url'], 'gps': '17.9689 N, 79.5941 E'}
+        for i in range(1, 6)
+    ]
 }
 status, new_claim = post_json('/api/applications', app_payload, farmer_token)
 assert status == 201, f'Creation failed: {status}'

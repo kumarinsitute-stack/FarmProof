@@ -212,9 +212,42 @@ export interface InstitutionalUsage {
   commercialReadinessNotes: string;
 }
 
+export interface PolicyRecord {
+  id: string;
+  policyNumber: string;
+  applicationId?: string;
+  farmerId: string;
+  farmerName: string;
+  phone: string;
+  email?: string;
+  village: string;
+  district: string;
+  state: string;
+  surveyNumber: string;
+  khasraNumber?: string;
+  crop: string;
+  season: string;
+  plotSize: string;
+  sumInsured: number;
+  sumInsuredRate?: string;
+  lat?: number;
+  lng?: number;
+  gpsAccuracyMeters?: number;
+  boundaryCoordinates?: [number, number][]; // Cadastral boundary polygon coordinates
+  aadhaar: string;
+  aadhaarVerified: boolean;
+  aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)' | 'Verified (UIDAI e-KYC)' | 'Pending Verification';
+  landRecordsVerified: boolean;
+  landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)' | 'Verified (State CCLA Portal)' | 'Pending Verification';
+  isDemoRecord: boolean;
+  source: string;
+  importedAt?: string;
+}
+
 interface DatabaseSchema {
   users: User[];
   applications: Application[];
+  policies: PolicyRecord[];
   notifications: AppNotification[];
   sessions: { [token: string]: string }; // token -> userId
   institutionalUsage: InstitutionalUsage;
@@ -307,6 +340,57 @@ const INITIAL_USERS: User[] = [
     bankName: 'Andhra Pradesh Grameena Vikas Bank',
     ifsc: 'APGV0002149',
     createdAt: '2026-10-12T11:00:00Z'
+  },
+  {
+    id: 'usr-farmer-3',
+    name: 'Srinivas Rao',
+    email: 'srinivas@farmer.in',
+    phone: '9440182931',
+    password: 'Farmer@2026',
+    role: 'farmer',
+    aadhaar: 'XXXX-XXXX-4819',
+    state: 'Telangana',
+    district: 'Warangal Rural',
+    village: 'Parkal',
+    surveyNumber: '108/B',
+    bankAccount: '2094810293',
+    bankName: 'Andhra Bank (Parkal)',
+    ifsc: 'ANDB0001928',
+    createdAt: '2026-10-14T09:00:00Z'
+  },
+  {
+    id: 'usr-farmer-4',
+    name: 'Suresh Reddy',
+    email: 'suresh@farmer.in',
+    phone: '9848077665',
+    password: 'Farmer@2026',
+    role: 'farmer',
+    aadhaar: 'XXXX-XXXX-9912',
+    state: 'Telangana',
+    district: 'Warangal Rural',
+    village: 'Geesugonda',
+    surveyNumber: '210/C',
+    bankAccount: '1102938475',
+    bankName: 'Canara Bank',
+    ifsc: 'CNRB0003819',
+    createdAt: '2026-10-14T10:00:00Z'
+  },
+  {
+    id: 'usr-farmer-5',
+    name: 'Anjaiah B.',
+    email: 'anjaiah@farmer.in',
+    phone: '9849201948',
+    password: 'Farmer@2026',
+    role: 'farmer',
+    aadhaar: 'XXXX-XXXX-9182',
+    state: 'Telangana',
+    district: 'Warangal Rural',
+    village: 'Geesugonda',
+    surveyNumber: '219/C',
+    bankAccount: '1098492810',
+    bankName: 'Telangana Grameena Bank',
+    ifsc: 'TGB0001092',
+    createdAt: '2026-10-15T11:00:00Z'
   }
 ];
 
@@ -510,7 +594,7 @@ const INITIAL_APPLICATIONS: Application[] = [
     bankAccount: '2019485731',
     bankName: 'Andhra Pradesh Grameena Vikas Bank',
     ifsc: 'APGV0002149',
-    policyNumber: 'PMFBY/TS/WR/2026/78219',
+    policyNumber: 'PMFBY/TS/WR/2026/89402',
     village: 'Chennaraopet',
     district: 'Warangal Rural',
     state: 'Telangana',
@@ -634,6 +718,306 @@ const INITIAL_APPLICATIONS: Application[] = [
         notes: 'Sanctioned ₹68,000 for direct benefit transfer to Canara Bank account.'
       }
     ]
+  },
+  {
+    id: 'FP-2043',
+    farmerId: 'usr-farmer-3',
+    farmerName: 'Srinivas Rao',
+    phone: '9440182931',
+    email: 'srinivas@farmer.in',
+    aadhaar: 'XXXX-XXXX-4819',
+    bankAccount: '2094810293',
+    bankName: 'Andhra Bank (Parkal)',
+    ifsc: 'ANDB0001928',
+    policyNumber: 'PMFBY/TS/WR/2026/89403',
+    village: 'Parkal',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '108/B',
+    plotSize: '0.8 ha',
+    category: 'PMFBY Clause 14.2 Localized Calamity',
+    crop: 'Cotton',
+    cause: 'Flood',
+    description: 'Heavy rain and flash flooding causing waterlogging across low-lying cotton basin.',
+    aiDamage: 'Moderate',
+    aiConfidence: 78,
+    damagePercentage: 45,
+    weatherMatch: 'Match',
+    weatherDetails: 'Heavy precipitation 62.4mm recorded on 15 Oct',
+    priority: 'Review',
+    suggestedAction: 'Review remotely: Clear waterlogging pattern',
+    status: 'Under Review',
+    submissionTime: '16 Oct 2026, 11:15',
+    lastUpdated: '17 Oct 2026, 09:30',
+    photosCount: 5,
+    gpsLocked: true,
+    lat: 18.1964,
+    lng: 79.7042,
+    estimatedPayoutInr: 22000,
+    payoutStatus: 'Pending',
+    photos: [],
+    history: [
+      {
+        id: 'hist-2043-1',
+        timestamp: '16 Oct 2026, 11:15',
+        status: 'Submitted',
+        performedBy: 'Srinivas Rao',
+        role: 'Farmer',
+        action: 'Application Submitted',
+        notes: 'Flood waterlogging report lodged within statutory 72h window.'
+      }
+    ]
+  },
+  {
+    id: 'FP-2047',
+    farmerId: 'usr-farmer-5',
+    farmerName: 'Anjaiah B.',
+    phone: '9849201948',
+    email: 'anjaiah@farmer.in',
+    aadhaar: 'XXXX-XXXX-9182',
+    bankAccount: '1098492810',
+    bankName: 'Telangana Grameena Bank',
+    ifsc: 'TGB0001092',
+    policyNumber: 'PMFBY/TS/WR/2026/89407',
+    village: 'Geesugonda',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '219/C',
+    plotSize: '2.1 ha',
+    category: 'PMFBY Clause 14.2 Localized Calamity',
+    crop: 'Paddy (Kharif)',
+    cause: 'Hail',
+    description: 'Intense hailstorm causing massive panicle shattering and 88% crop flattening.',
+    aiDamage: 'Severe',
+    aiConfidence: 91,
+    damagePercentage: 88,
+    weatherMatch: 'Match',
+    weatherDetails: 'Severe hailstorm event corroborated by regional doppler radar on 16 Oct',
+    priority: 'Verified',
+    suggestedAction: 'Auto-approve: High AI confidence & weather match',
+    status: 'Approved',
+    submissionTime: '16 Oct 2026, 09:40',
+    lastUpdated: '18 Oct 2026, 15:00',
+    photosCount: 5,
+    gpsLocked: true,
+    lat: 17.9234,
+    lng: 79.6421,
+    sanctionedPayoutInr: 72000,
+    estimatedPayoutInr: 72000,
+    payoutStatus: 'Approved',
+    photos: [],
+    history: [
+      {
+        id: 'hist-2047-1',
+        timestamp: '16 Oct 2026, 09:40',
+        status: 'Submitted',
+        performedBy: 'Anjaiah B.',
+        role: 'Farmer',
+        action: 'Application Submitted',
+        notes: 'Hail damage intimation submitted.'
+      },
+      {
+        id: 'hist-2047-2',
+        timestamp: '18 Oct 2026, 15:00',
+        status: 'Approved',
+        performedBy: 'S. Sharma (MAO)',
+        role: 'Officer',
+        action: 'Statutory Approval',
+        notes: 'Full sanction of ₹72,000 approved for DBT transfer.'
+      }
+    ]
+  }
+];
+
+export const INITIAL_POLICIES: PolicyRecord[] = [
+  {
+    id: 'pol-89401',
+    policyNumber: 'PMFBY/TS/WR/2026/89401',
+    applicationId: 'FP-2041',
+    farmerId: 'usr-farmer-1',
+    farmerName: 'Ramulu Kurapati',
+    phone: '9848023145',
+    email: 'ramulu@farmer.in',
+    village: 'Nallabelly',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '412/A',
+    khasraNumber: 'Khasra 884',
+    crop: 'Paddy (Kharif)',
+    season: 'Kharif 2026',
+    plotSize: '1.2 ha',
+    sumInsured: 50400,
+    sumInsuredRate: '₹42,000 / ha',
+    lat: 17.9689,
+    lng: 79.5941,
+    gpsAccuracyMeters: 3.2,
+    boundaryCoordinates: [
+      [17.9698, 79.5932],
+      [17.9697, 79.5949],
+      [17.9681, 79.5950],
+      [17.9680, 79.5933]
+    ],
+    aadhaar: 'XXXX-XXXX-8492',
+    aadhaarVerified: true,
+    aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)',
+    landRecordsVerified: true,
+    landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)',
+    isDemoRecord: true,
+    source: 'PMFBY National Portal (Demo Sandbox)'
+  },
+  {
+    id: 'pol-89402',
+    policyNumber: 'PMFBY/TS/WR/2026/89402',
+    applicationId: 'FP-2038',
+    farmerId: 'usr-farmer-2',
+    farmerName: 'Lakshmi Bai',
+    phone: '9848099881',
+    email: 'lakshmi@farmer.in',
+    village: 'Chennaraopet',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '528/B',
+    khasraNumber: 'Khasra 312',
+    crop: 'Cotton (Kharif Season)',
+    season: 'Kharif 2026',
+    plotSize: '0.9 ha',
+    sumInsured: 37800,
+    sumInsuredRate: '₹42,000 / ha',
+    lat: 17.9214,
+    lng: 79.6412,
+    gpsAccuracyMeters: 3.8,
+    boundaryCoordinates: undefined, // Missing boundary polygon: Point GPS only
+    aadhaar: 'XXXX-XXXX-3190',
+    aadhaarVerified: true,
+    aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)',
+    landRecordsVerified: true,
+    landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)',
+    isDemoRecord: true,
+    source: 'PMFBY National Portal (Demo Sandbox)'
+  },
+  {
+    id: 'pol-89403',
+    policyNumber: 'PMFBY/TS/WR/2026/89403',
+    applicationId: 'FP-2043',
+    farmerId: 'usr-farmer-3',
+    farmerName: 'Srinivas Rao',
+    phone: '9440182931',
+    email: 'srinivas@farmer.in',
+    village: 'Parkal',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '108/B',
+    khasraNumber: 'Khasra 108',
+    crop: 'Cotton (Kharif Season)',
+    season: 'Kharif 2026',
+    plotSize: '0.8 ha',
+    sumInsured: 33600,
+    sumInsuredRate: '₹42,000 / ha',
+    lat: 18.1964,
+    lng: 79.7042,
+    gpsAccuracyMeters: 4.1,
+    boundaryCoordinates: undefined,
+    aadhaar: 'XXXX-XXXX-4819',
+    aadhaarVerified: true,
+    aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)',
+    landRecordsVerified: true,
+    landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)',
+    isDemoRecord: true,
+    source: 'PMFBY National Portal (Demo Sandbox)'
+  },
+  {
+    id: 'pol-65104',
+    policyNumber: 'PMFBY/TS/WR/2026/65104',
+    applicationId: 'FP-2035',
+    farmerId: 'usr-farmer-4',
+    farmerName: 'Suresh Reddy',
+    phone: '9848077665',
+    email: 'suresh@farmer.in',
+    village: 'Geesugonda',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '210/C',
+    khasraNumber: 'Khasra 210',
+    crop: 'Maize (Kharif Season)',
+    season: 'Kharif 2026',
+    plotSize: '2.0 ha',
+    sumInsured: 84000,
+    sumInsuredRate: '₹42,000 / ha',
+    lat: 17.9450,
+    lng: 79.6800,
+    gpsAccuracyMeters: 2.5,
+    boundaryCoordinates: [
+      [17.9458, 79.6790],
+      [17.9457, 79.6812],
+      [17.9442, 79.6811],
+      [17.9441, 79.6791]
+    ],
+    aadhaar: 'XXXX-XXXX-9912',
+    aadhaarVerified: true,
+    aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)',
+    landRecordsVerified: true,
+    landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)',
+    isDemoRecord: true,
+    source: 'PMFBY National Portal (Demo Sandbox)'
+  },
+  {
+    id: 'pol-89407',
+    policyNumber: 'PMFBY/TS/WR/2026/89407',
+    applicationId: 'FP-2047',
+    farmerId: 'usr-farmer-5',
+    farmerName: 'Anjaiah B.',
+    phone: '9849201948',
+    email: 'anjaiah@farmer.in',
+    village: 'Geesugonda',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '219/C',
+    khasraNumber: 'Khasra 219',
+    crop: 'Paddy (Kharif)',
+    season: 'Kharif 2026',
+    plotSize: '2.1 ha',
+    sumInsured: 88200,
+    sumInsuredRate: '₹42,000 / ha',
+    lat: 17.9234,
+    lng: 79.6421,
+    gpsAccuracyMeters: 3.0,
+    boundaryCoordinates: undefined,
+    aadhaar: 'XXXX-XXXX-9182',
+    aadhaarVerified: true,
+    aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)',
+    landRecordsVerified: true,
+    landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)',
+    isDemoRecord: true,
+    source: 'PMFBY National Portal (Demo Sandbox)'
+  },
+  {
+    id: 'pol-99001',
+    policyNumber: 'PMFBY/TS/WR/2026/99001',
+    farmerId: 'usr-farmer-demo-6',
+    farmerName: 'Mallesh Kompally',
+    phone: '9848055667',
+    email: 'mallesh@farmer.in',
+    village: 'Atmakur',
+    district: 'Warangal Rural',
+    state: 'Telangana',
+    surveyNumber: '304/A',
+    khasraNumber: 'Khasra 304',
+    crop: 'Paddy (Kharif)',
+    season: 'Kharif 2026',
+    plotSize: '1.5 ha',
+    sumInsured: 63000,
+    sumInsuredRate: '₹42,000 / ha',
+    lat: undefined, // Missing coordinates test scenario
+    lng: undefined,
+    gpsAccuracyMeters: undefined,
+    boundaryCoordinates: undefined,
+    aadhaar: 'XXXX-XXXX-1122',
+    aadhaarVerified: false,
+    aadhaarVerificationStatus: 'Pending Verification',
+    landRecordsVerified: false,
+    landRecordsVerificationStatus: 'Pending Verification',
+    isDemoRecord: true,
+    source: 'PMFBY National Portal (Demo - Unsurveyed Cadastre)'
   }
 ];
 
@@ -687,6 +1071,42 @@ class DataStore {
         const parsed = JSON.parse(raw);
         if (!parsed.institutionalUsage) {
           parsed.institutionalUsage = { ...INITIAL_INSTITUTIONAL_USAGE };
+        }
+        // Ensure all demo initial users are present
+        let changed = false;
+        if (!parsed.users) parsed.users = [];
+        for (const initUser of INITIAL_USERS) {
+          if (!parsed.users.some((u: User) => u.id === initUser.id || u.phone === initUser.phone)) {
+            parsed.users.push(initUser);
+            changed = true;
+          }
+        }
+        if (!parsed.applications) parsed.applications = [];
+        for (const initApp of INITIAL_APPLICATIONS) {
+          const appIndex = parsed.applications.findIndex((a: Application) => a.id === initApp.id);
+          if (appIndex === -1) {
+            parsed.applications.push(initApp);
+            changed = true;
+          } else {
+            // Update policyNumber if it changed (e.g. FP-2038 to 89402)
+            if (parsed.applications[appIndex].policyNumber !== initApp.policyNumber) {
+              parsed.applications[appIndex].policyNumber = initApp.policyNumber;
+              changed = true;
+            }
+          }
+        }
+        if (!parsed.policies) parsed.policies = [];
+        for (const initPol of INITIAL_POLICIES) {
+          const polIndex = parsed.policies.findIndex((p: PolicyRecord) => p.id === initPol.id || p.policyNumber === initPol.policyNumber);
+          if (polIndex === -1) {
+            parsed.policies.push(initPol);
+            changed = true;
+          } else {
+            // Keep fresh demo coordinates and boundaries
+            parsed.policies[polIndex] = { ...initPol, ...parsed.policies[polIndex] };
+          }
+        }
+        if (changed) {
           this.save(parsed);
         }
         return parsed;
@@ -697,6 +1117,7 @@ class DataStore {
     const initial: DatabaseSchema = {
       users: INITIAL_USERS,
       applications: INITIAL_APPLICATIONS,
+      policies: INITIAL_POLICIES,
       notifications: INITIAL_NOTIFICATIONS,
       sessions: {
         'token-officer-demo': 'usr-officer-1',
@@ -769,8 +1190,183 @@ class DataStore {
 
   createApplication(app: Application): Application {
     this.db.applications.unshift(app);
+    // Auto-sync into policies database
+    if (app.policyNumber) {
+      this.createPolicy({
+        id: `pol-${app.id}`,
+        policyNumber: app.policyNumber,
+        applicationId: app.id,
+        farmerId: app.farmerId,
+        farmerName: app.farmerName,
+        phone: app.phone,
+        email: app.email,
+        village: app.village,
+        district: app.district,
+        state: app.state,
+        surveyNumber: app.surveyNumber,
+        crop: app.crop,
+        season: 'Kharif 2026',
+        plotSize: app.plotSize,
+        sumInsured: app.estimatedPayoutInr || 42000,
+        sumInsuredRate: '₹42,000 / ha',
+        lat: app.lat,
+        lng: app.lng,
+        gpsAccuracyMeters: 3.2,
+        aadhaar: app.aadhaar || 'XXXX-XXXX-0000',
+        aadhaarVerified: true,
+        aadhaarVerificationStatus: 'Demo Verified (Synthetic Sandbox)',
+        landRecordsVerified: true,
+        landRecordsVerificationStatus: 'Demo Verified (State Portal Sandbox)',
+        isDemoRecord: true,
+        source: 'Farmer Application Intake'
+      });
+    }
     this.save();
     return app;
+  }
+
+  // Policies
+  getPolicies(): PolicyRecord[] {
+    if (!this.db.policies) {
+      this.db.policies = [...INITIAL_POLICIES];
+      this.save();
+    }
+    return this.db.policies;
+  }
+
+  findPolicyById(id: string): PolicyRecord | undefined {
+    return this.getPolicies().find((p) => p.id === id);
+  }
+
+  findPolicyByNumber(query: string): { matches: PolicyRecord[]; exactMatch?: PolicyRecord } {
+    const raw = query.trim();
+    if (!raw) return { matches: [] };
+
+    const clean = raw.toLowerCase();
+    const cleanDigits = raw.replace(/[^a-z0-9]/gi, '').toLowerCase();
+    const policies = this.getPolicies();
+
+    // 1. Exact match on full policy number
+    const exactFull = policies.filter(
+      (p) => p.policyNumber.trim().toLowerCase() === clean
+    );
+    if (exactFull.length > 0) {
+      return { matches: exactFull, exactMatch: exactFull[0] };
+    }
+
+    // 2. Exact match on policy number suffix (e.g. searching '89401' against 'PMFBY/TS/WR/2026/89401')
+    const suffixMatches = policies.filter((p) => {
+      const pClean = p.policyNumber.trim().toLowerCase();
+      const parts = pClean.split('/');
+      const lastPart = parts[parts.length - 1];
+      return lastPart === clean || pClean.endsWith('/' + clean);
+    });
+    if (suffixMatches.length === 1) {
+      return { matches: suffixMatches, exactMatch: suffixMatches[0] };
+    }
+    if (suffixMatches.length > 1) {
+      return { matches: suffixMatches };
+    }
+
+    // 3. Normalized alphanumeric match
+    const normMatches = policies.filter((p) => {
+      const pDigits = p.policyNumber.replace(/[^a-z0-9]/gi, '').toLowerCase();
+      return pDigits === cleanDigits || pDigits.endsWith(cleanDigits);
+    });
+    if (normMatches.length === 1) {
+      return { matches: normMatches, exactMatch: normMatches[0] };
+    }
+    if (normMatches.length > 1) {
+      return { matches: normMatches };
+    }
+
+    // 4. Substring contains match (as fallback)
+    const subMatches = policies.filter((p) =>
+      p.policyNumber.toLowerCase().includes(clean)
+    );
+    if (subMatches.length === 1) {
+      return { matches: subMatches, exactMatch: subMatches[0] };
+    }
+
+    return { matches: subMatches };
+  }
+
+  createPolicy(policy: PolicyRecord): PolicyRecord {
+    if (!this.db.policies) this.db.policies = [];
+    const existingIndex = this.db.policies.findIndex(
+      (p) => p.id === policy.id || p.policyNumber === policy.policyNumber
+    );
+    if (existingIndex >= 0) {
+      this.db.policies[existingIndex] = { ...this.db.policies[existingIndex], ...policy };
+      this.save();
+      return this.db.policies[existingIndex];
+    } else {
+      this.db.policies.push(policy);
+      this.save();
+      return policy;
+    }
+  }
+
+  importPolicies(
+    records: Partial<PolicyRecord>[],
+    sourceName: string = 'Imported Dataset'
+  ): { imported: number; updated: number; errors: string[] } {
+    let imported = 0;
+    let updated = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < records.length; i++) {
+      const r = records[i];
+      if (!r.policyNumber || !r.farmerName) {
+        errors.push(`Record #${i + 1} skipped: Missing policyNumber or farmerName.`);
+        continue;
+      }
+
+      const cleanPolicyNo = r.policyNumber.trim();
+      const existing = this.getPolicies().find((p) => p.policyNumber === cleanPolicyNo);
+
+      const polRecord: PolicyRecord = {
+        id: r.id || `pol-${Date.now()}-${i}`,
+        policyNumber: cleanPolicyNo,
+        applicationId: r.applicationId,
+        farmerId: r.farmerId || `farmer-${Date.now()}-${i}`,
+        farmerName: r.farmerName.trim(),
+        phone: r.phone || '9848000000',
+        email: r.email,
+        village: r.village || 'Nallabelly',
+        district: r.district || 'Warangal Rural',
+        state: r.state || 'Telangana',
+        surveyNumber: r.surveyNumber || 'N/A',
+        khasraNumber: r.khasraNumber || 'N/A',
+        crop: r.crop || 'Paddy (Kharif)',
+        season: r.season || 'Kharif 2026',
+        plotSize: r.plotSize || '1.0 ha',
+        sumInsured: Number(r.sumInsured) || 42000,
+        sumInsuredRate: r.sumInsuredRate || '₹42,000 / ha',
+        lat: typeof r.lat === 'number' && !isNaN(r.lat) ? r.lat : undefined,
+        lng: typeof r.lng === 'number' && !isNaN(r.lng) ? r.lng : undefined,
+        gpsAccuracyMeters: r.gpsAccuracyMeters || 3.2,
+        boundaryCoordinates: Array.isArray(r.boundaryCoordinates) && r.boundaryCoordinates.length >= 3 ? r.boundaryCoordinates : undefined,
+        aadhaar: r.aadhaar || 'XXXX-XXXX-0000',
+        aadhaarVerified: Boolean(r.aadhaarVerified),
+        aadhaarVerificationStatus: r.aadhaarVerificationStatus || (r.aadhaarVerified ? 'Demo Verified (Synthetic Sandbox)' : 'Pending Verification'),
+        landRecordsVerified: Boolean(r.landRecordsVerified),
+        landRecordsVerificationStatus: r.landRecordsVerificationStatus || (r.landRecordsVerified ? 'Demo Verified (State Portal Sandbox)' : 'Pending Verification'),
+        isDemoRecord: r.isDemoRecord !== undefined ? Boolean(r.isDemoRecord) : true,
+        source: sourceName,
+        importedAt: new Date().toISOString()
+      };
+
+      if (existing) {
+        this.createPolicy({ ...existing, ...polRecord, id: existing.id });
+        updated++;
+      } else {
+        this.createPolicy(polRecord);
+        imported++;
+      }
+    }
+
+    return { imported, updated, errors };
   }
 
   updateApplication(id: string, updates: Partial<Application>): Application | undefined {
@@ -837,6 +1433,7 @@ class DataStore {
     const cleanDb: DatabaseSchema = {
       users: [...INITIAL_USERS],
       applications: JSON.parse(JSON.stringify(INITIAL_APPLICATIONS)),
+      policies: JSON.parse(JSON.stringify(INITIAL_POLICIES)),
       notifications: JSON.parse(JSON.stringify(INITIAL_NOTIFICATIONS)),
       sessions: {
         'token-officer-demo': 'usr-officer-1',
