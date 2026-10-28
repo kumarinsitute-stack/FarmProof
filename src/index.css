@@ -1,5 +1,84 @@
 @import "tailwindcss";
 
+:root {
+  /* ==========================================================================
+     FarmProof Centralized Theme System - CSS Custom Properties
+     Light Theme (Default)
+     ========================================================================== */
+  --bg-main: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #e2e8f0;
+  --bg-input: #ffffff;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-focus: #10b981;
+
+  --accent-primary: #10b981;
+  --accent-primary-hover: #059669;
+
+  --status-success-bg: #ecfdf5;
+  --status-success-text: #065f46;
+  --status-success-border: #a7f3d0;
+
+  --status-warning-bg: #fffbeb;
+  --status-warning-text: #92400e;
+  --status-warning-border: #fde68a;
+
+  --status-error-bg: #fef2f2;
+  --status-error-text: #991b1b;
+  --status-error-border: #fecaca;
+
+  --status-info-bg: #f0f9ff;
+  --status-info-text: #075985;
+  --status-info-border: #bae6fd;
+}
+
+html.dark,
+[data-theme="dark"] {
+  /* ==========================================================================
+     FarmProof Centralized Theme System - CSS Custom Properties
+     Dark Theme (Agricultural Technology Dashboard Palette)
+     ========================================================================== */
+  --bg-main: #0B1220;
+  --bg-card: #111C2E;
+  --bg-secondary: #1B293D;
+  --bg-tertiary: #24354D;
+  --bg-input: #1B293D;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted: #A7B4C7;
+
+  --border-subtle: #29384D;
+  --border-strong: #3B4D66;
+  --border-focus: #10B981;
+
+  --accent-primary: #10B981;
+  --accent-primary-hover: #34D399;
+
+  --status-success-bg: rgba(16, 185, 129, 0.15);
+  --status-success-text: #6EE7B7;
+  --status-success-border: rgba(16, 185, 129, 0.35);
+
+  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-warning-text: #FCD34D;
+  --status-warning-border: rgba(245, 158, 11, 0.35);
+
+  --status-error-bg: rgba(239, 68, 68, 0.15);
+  --status-error-text: #FCA5A5;
+  --status-error-border: rgba(239, 68, 68, 0.35);
+
+  --status-info-bg: rgba(14, 165, 233, 0.15);
+  --status-info-text: #7DD3FC;
+  --status-info-border: rgba(14, 165, 233, 0.35);
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -25,4 +104,321 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(16, 185, 129, 0.6);
+}
+
+/* ==========================================================================
+   DARK MODE COMPONENT & UTILITY RULES
+   Ensures seamless, professional dark appearance across all screens
+   ========================================================================== */
+
+/* 1. Main Background & Text */
+html.dark,
+html.dark body,
+html.dark #root,
+html.dark .min-h-screen,
+html.dark .bg-slate-100 {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 2. Cards, Containers, Modals, Panels, and Table Backgrounds */
+html.dark .bg-white:not(.tricolor-white):not(.leaflet-tile):not(.preserve-white) {
+  background-color: var(--bg-card) !important;
+}
+
+html.dark [class*="bg-white/"]:not(.preserve-white):not(.tricolor-white) {
+  background-color: rgba(17, 28, 46, 0.95) !important;
+}
+
+/* 3. Secondary Surfaces (Sub-cards, strips, table headers) */
+html.dark .bg-slate-50:not(.tricolor-strip *):not(.leaflet-tile) {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.dark header .bg-slate-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+/* 4. Tertiary Surfaces (Pills, badges, chips) */
+html.dark div:not(.min-h-screen).bg-slate-100,
+html.dark span.bg-slate-100,
+html.dark button.bg-slate-100,
+html.dark nav.bg-slate-100,
+html.dark .bg-slate-200 {
+  background-color: var(--bg-tertiary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* 5. Slate-900 / Slate-800 Buttons and Chips */
+html.dark .bg-slate-900:not(.tricolor-strip *):not(.keep-dark),
+html.dark .bg-slate-800:not(.tricolor-strip *):not(.keep-dark) {
+  background-color: #1E2E45 !important;
+  border: 1px solid #334863 !important;
+  color: #F1F5F9 !important;
+}
+
+html.dark .hover\:bg-slate-900:hover,
+html.dark .hover\:bg-slate-800:hover {
+  background-color: #273A56 !important;
+}
+
+/* 6. Borders and Dividers */
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-200\/90 {
+  border-color: var(--border-subtle) !important;
+}
+
+html.dark .border-slate-300 {
+  border-color: var(--border-strong) !important;
+}
+
+html.dark [class*="divide-slate-"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle) !important;
+}
+
+/* 7. Typography / Contrast */
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: var(--text-primary) !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+
+/* 8. Forms, Inputs, Dropdowns, Textareas */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html.dark select,
+html.dark textarea {
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: var(--accent-primary) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+html.dark select option {
+  background-color: #111C2E !important;
+  color: #F1F5F9 !important;
+}
+
+/* 9. Accessible Status Badges & Callouts */
+/* Warning / Amber */
+html.dark .bg-amber-50,
+html.dark [class*="bg-amber-50/"] {
+  background-color: var(--status-warning-bg) !important;
+}
+html.dark .border-amber-200,
+html.dark .border-amber-300 {
+  border-color: var(--status-warning-border) !important;
+}
+html.dark .text-amber-800,
+html.dark .text-amber-900 {
+  color: var(--status-warning-text) !important;
+}
+html.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.22) !important;
+}
+html.dark .text-amber-700 {
+  color: #FCD34D !important;
+}
+
+/* Success / Emerald */
+html.dark .bg-emerald-50,
+html.dark [class*="bg-emerald-50/"] {
+  background-color: var(--status-success-bg) !important;
+}
+html.dark .border-emerald-100,
+html.dark .border-emerald-200,
+html.dark .border-emerald-300 {
+  border-color: var(--status-success-border) !important;
+}
+html.dark .text-emerald-800,
+html.dark .text-emerald-900 {
+  color: var(--status-success-text) !important;
+}
+html.dark .text-emerald-700 {
+  color: #34D399 !important;
+}
+html.dark .bg-emerald-100,
+html.dark [class*="bg-emerald-100/"] {
+  background-color: rgba(16, 185, 129, 0.22) !important;
+}
+
+/* Danger / Rose / Red */
+html.dark .bg-rose-50,
+html.dark .bg-red-50,
+html.dark [class*="bg-rose-50/"] {
+  background-color: var(--status-error-bg) !important;
+}
+html.dark .border-rose-200,
+html.dark .border-rose-300,
+html.dark .border-red-200,
+html.dark .border-red-300 {
+  border-color: var(--status-error-border) !important;
+}
+html.dark .text-rose-800,
+html.dark .text-rose-900,
+html.dark .text-red-800,
+html.dark .text-red-900 {
+  color: var(--status-error-text) !important;
+}
+html.dark .text-rose-700,
+html.dark .text-red-700 {
+  color: #FCA5A5 !important;
+}
+html.dark .bg-rose-100,
+html.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+/* Info / Sky / Blue */
+html.dark .bg-sky-50,
+html.dark .bg-blue-50,
+html.dark [class*="bg-sky-50/"] {
+  background-color: var(--status-info-bg) !important;
+}
+html.dark .border-sky-200,
+html.dark .border-sky-300,
+html.dark .border-blue-200 {
+  border-color: var(--status-info-border) !important;
+}
+html.dark .text-sky-800,
+html.dark .text-sky-900,
+html.dark .text-blue-800,
+html.dark .text-blue-900 {
+  color: var(--status-info-text) !important;
+}
+html.dark .text-sky-700,
+html.dark .text-blue-700 {
+  color: #38BDF8 !important;
+}
+html.dark .bg-sky-100,
+html.dark .bg-blue-100 {
+  background-color: rgba(14, 165, 233, 0.22) !important;
+}
+
+/* 10. Hover & Interaction States */
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.dark .hover\:bg-emerald-50\/40:hover,
+html.dark .hover\:bg-emerald-50:hover,
+html.dark .hover\:bg-emerald-100:hover {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+html.dark .hover\:bg-amber-100:hover {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+}
+
+/* 11. Leaflet Map Safeguards (DO NOT distort map tiles) */
+html.dark .leaflet-tile,
+html.dark .leaflet-tile-pane,
+html.dark .leaflet-tile-container {
+  filter: none !important;
+}
+
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-popup-tip {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+html.dark .leaflet-popup-content {
+  color: var(--text-primary) !important;
+}
+
+html.dark .leaflet-control-zoom a {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+html.dark .leaflet-control-zoom a:hover {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.dark .leaflet-control-attribution {
+  background-color: rgba(17, 28, 46, 0.85) !important;
+  color: var(--text-muted) !important;
+}
+
+html.dark .leaflet-control-attribution a {
+  color: var(--accent-primary) !important;
+}
+
+/* 12. Photo Previews & Evidence Image Colors Protection */
+html.dark img,
+html.dark video,
+html.dark canvas {
+  filter: none !important;
+}
+
+/* 13. Official Tricolor Strip Protection */
+.tricolor-strip .tricolor-white,
+.tricolor-white {
+  background-color: #ffffff !important;
+  border-top-color: #e2e8f0 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+/* 14. DemoSelectorHeader Gradients */
+html.dark [class*="from-emerald-50/70"] {
+  background-image: linear-gradient(to right, rgba(16, 185, 129, 0.15), rgba(27, 41, 61, 0.8), #111C2E) !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+html.dark [class*="from-slate-100/70"] {
+  background-image: linear-gradient(to right, rgba(36, 53, 77, 0.7), rgba(27, 41, 61, 0.8), #111C2E) !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+/* 15. Custom Scrollbar in Dark Mode */
+html.dark ::-webkit-scrollbar-track {
+  background: #0B1220;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #29384D;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #10B981;
+}
+
+/* 16. Shadows in Dark Mode */
+html.dark .shadow-sm,
+html.dark .shadow-xs,
+html.dark .shadow-2xs {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.45) !important;
+}
+
+html.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6) !important;
 }

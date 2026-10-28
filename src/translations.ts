@@ -8,6 +8,10 @@ export const translations = {
     claimTracker: "Track Claim Status",
     schemeProfile: "Scheme Profile",
     langName: "English",
+    themeToggleDark: "Switch to Dark Mode",
+    themeToggleLight: "Switch to Light Mode",
+    themeDark: "Dark",
+    themeLight: "Light",
 
     // Government Scheme Profile & Overview
     prototypeTitle: "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
@@ -274,6 +278,10 @@ export const translations = {
     claimTracker: "दावा स्थिति ट्रैक करें",
     schemeProfile: "योजना प्रोफाइल",
     langName: "हिन्दी",
+    themeToggleDark: "डार्क मोड चालू करें",
+    themeToggleLight: "लाइट मोड चालू करें",
+    themeDark: "डार्क",
+    themeLight: "लाइट",
 
     // Government Scheme Profile & Overview
     prototypeTitle: "प्रधानमंत्री फसल बीमा योजना (PMFBY)",
@@ -540,6 +548,10 @@ export const translations = {
     claimTracker: "క్లెయిమ్ స్థితి తనిఖీ",
     schemeProfile: "పథకం వివరాలు",
     langName: "తెలుగు",
+    themeToggleDark: "డార్క్ మోడ్ ఆన్ చేయండి",
+    themeToggleLight: "లైట్ మోడ్ ఆన్ చేయండి",
+    themeDark: "డార్క్",
+    themeLight: "లైట్",
 
     // Government Scheme Profile & Overview
     prototypeTitle: "ప్రధాన మంత్రి ఫసల్ బీమా యోజన (PMFBY)",

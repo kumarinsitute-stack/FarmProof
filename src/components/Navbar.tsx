@@ -1,9 +1,10 @@
 import React from 'react';
-import { ViewMode, Language, User } from '../types';
+import { ViewMode, Language, Theme, User } from '../types';
 import { translations } from '../translations';
 import { 
-  Phone, ShieldCheck, FileText, Camera, Search, 
-  Building2, User as UserIcon, LogOut, Download, Compass, Presentation
+  Phone, ShieldCheck, FileText, 
+  Building2, User as UserIcon, LogOut,
+  Sun, Moon
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -13,7 +14,8 @@ interface NavbarProps {
   setLanguage: (lang: Language) => void;
   currentUser: User | null;
   onLogout: () => void;
-  onOpenPresentation?: () => void;
+  theme: Theme;
+  toggleTheme: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -23,7 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   setLanguage,
   currentUser,
   onLogout,
-  onOpenPresentation
+  theme,
+  toggleTheme,
 }) => {
   const t = translations[language];
 
@@ -48,9 +51,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-xs">
       {/* 1. Official Government of India Tricolor Strip */}
-      <div className="h-1.5 w-full flex">
+      <div className="h-1.5 w-full flex tricolor-strip">
         <div className="h-full w-1/3 bg-[#FF9933]"></div>
-        <div className="h-full w-1/3 bg-white border-y border-slate-200"></div>
+        <div className="h-full w-1/3 bg-white border-y border-slate-200 tricolor-white"></div>
         <div className="h-full w-1/3 bg-[#138808]"></div>
       </div>
 
@@ -148,19 +151,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Building2 className="w-3.5 h-3.5" />
               <span>Staff Portal</span>
             </button>
-
-            {/* Original Slide Deck Button */}
-            {onOpenPresentation && (
-              <button
-                type="button"
-                onClick={onOpenPresentation}
-                className="px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 font-bold shadow-2xs"
-                title="View original PowerPoint presentation slides"
-              >
-                <Presentation className="w-3.5 h-3.5 text-amber-700" />
-                <span>Original Slide Deck</span>
-              </button>
-            )}
           </nav>
 
           {/* User Session Badge (When Logged In) */}
@@ -242,6 +232,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               తెలుగు
             </button>
           </div>
+
+          {/* Theme Toggle Button (Sun / Moon) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            id="theme-toggle-btn"
+            className="p-2 rounded-xl border transition flex items-center justify-center cursor-pointer shadow-2xs group bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+            title={theme === 'dark' ? t.themeToggleLight : t.themeToggleDark}
+            aria-label={theme === 'dark' ? t.themeToggleLight : t.themeToggleDark}
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400 transition-transform group-hover:rotate-45" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-700 transition-transform group-hover:-rotate-12" />
+            )}
+          </button>
         </div>
       </div>
     </header>

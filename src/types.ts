@@ -1,4 +1,5 @@
 export type Language = 'EN' | 'HI' | 'TE';
+export type Theme = 'light' | 'dark';
 
 export type ViewMode = 
   | 'role_select'
