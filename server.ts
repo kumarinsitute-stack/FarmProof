@@ -260,19 +260,23 @@ app.post("/api/upload", (req, res) => {
       .json({ error: "File data and filename are required." });
   }
 
-  // Validate supported mime types
+  // Validate supported mime types (images, pdfs, and policy/cadastre data files)
   const allowedMimeTypes = [
     "image/jpeg",
     "image/jpg",
     "image/png",
     "image/webp",
     "application/pdf",
+    "text/csv",
+    "application/json",
+    "application/geo+json",
   ];
-  if (type && !allowedMimeTypes.includes(type.toLowerCase())) {
+  const isDataFile = /\.(csv|json|geojson)$/i.test(name);
+  if (type && !allowedMimeTypes.includes(type.toLowerCase()) && !isDataFile) {
     return res
       .status(400)
       .json({
-        error: `Unsupported file format '${type}'. Supported formats: JPEG, PNG, WebP, PDF.`,
+        error: `Unsupported file format '${type}'. Supported formats: JPEG, PNG, WebP, PDF, CSV, JSON, GeoJSON.`,
       });
   }
 
@@ -352,12 +356,66 @@ app.post("/api/upload", (req, res) => {
         ? `${(buffer.length / (1024 * 1024)).toFixed(1)} MB`
         : `${Math.round(buffer.length / 1024)} KB`;
 
+    let importedPoliciesCount = 0;
+    // Auto-parse & index if uploaded file is a JSON or CSV dataset with policy records
+    if (/\.json$/i.test(name)) {
+      try {
+        const parsedJson = JSON.parse(buffer.toString('utf-8'));
+        const rawPolicies = Array.isArray(parsedJson)
+          ? parsedJson
+          : parsedJson.policies || (parsedJson.features ? parsedJson.features.map((f: any) => ({ ...f.properties, boundaryCoordinates: f.geometry?.coordinates?.[0] })) : null);
+        if (Array.isArray(rawPolicies)) {
+          const importRes = dataStore.importPolicies(rawPolicies, `Uploaded File: ${safeName}`);
+          importedPoliciesCount = importRes.imported + importRes.updated;
+        }
+      } catch (err) {
+        console.warn('Could not parse uploaded JSON as policy records:', err);
+      }
+    } else if (/\.csv$/i.test(name)) {
+      try {
+        const text = buffer.toString('utf-8');
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length > 1) {
+          const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+          const records: any[] = [];
+          for (let i = 1; i < lines.length; i++) {
+            const vals = lines[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+            const row: any = {};
+            headers.forEach((h, idx) => {
+              row[h] = vals[idx];
+            });
+            if (row.policyNumber || row.policy_no) {
+              records.push({
+                policyNumber: row.policyNumber || row.policy_no,
+                farmerName: row.farmerName || row.farmer_name || row.name,
+                surveyNumber: row.surveyNumber || row.survey_no || row.khasra,
+                crop: row.crop,
+                village: row.village,
+                district: row.district,
+                plotSize: row.plotSize || row.area,
+                sumInsured: Number(row.sumInsured || row.sum_insured) || undefined,
+                lat: row.lat ? Number(row.lat) : undefined,
+                lng: row.lng ? Number(row.lng) : undefined
+              });
+            }
+          }
+          if (records.length > 0) {
+            const importRes = dataStore.importPolicies(records, `Uploaded CSV: ${safeName}`);
+            importedPoliciesCount = importRes.imported + importRes.updated;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not parse uploaded CSV as policy records:', err);
+      }
+    }
+
     res.json({
       success: true,
       url: `/uploads/${filename}`,
       name: safeName,
       size: sizeFormatted,
       type: type || "image/jpeg",
+      importedPoliciesCount
     });
   } catch (err: any) {
     console.error("File upload error:", err);
@@ -365,6 +423,127 @@ app.post("/api/upload", (req, res) => {
       .status(500)
       .json({ error: "Failed to process file upload: " + err?.message });
   }
+});
+
+// ==========================================
+// PMFBY POLICY & CADASTRAL VERIFICATION ENDPOINTS
+// ==========================================
+
+// Verify a PMFBY policy number dynamically with real database lookup
+app.get("/api/policies/verify", (req, res) => {
+  const policyQuery = typeof req.query.policyNumber === "string" ? req.query.policyNumber : "";
+  const trimmed = policyQuery.trim();
+
+  if (!trimmed) {
+    return res.status(400).json({
+      found: false,
+      error: "Please enter a PMFBY policy number to search."
+    });
+  }
+
+  const result = dataStore.findPolicyByNumber(trimmed);
+
+  if (result.matches.length === 0) {
+    return res.status(404).json({
+      found: false,
+      error: `Policy Not Found: No active PMFBY policy record matches '${trimmed}'. Please verify the policy number and try again.`
+    });
+  }
+
+  // Handle ambiguous multiple distinct matches
+  if (!result.exactMatch && result.matches.length > 1) {
+    return res.status(300).json({
+      found: false,
+      ambiguous: true,
+      error: `Multiple policies (${result.matches.length}) matched '${trimmed}'. Please specify the exact full policy number.`,
+      matchingPolicies: result.matches.map((m) => m.policyNumber)
+    });
+  }
+
+  const record = result.exactMatch || result.matches[0];
+
+  // Backend integrity checks
+  if (!record.farmerName || !record.surveyNumber || !record.crop) {
+    return res.status(500).json({
+      found: false,
+      error: "Data integrity verification failed: Policy record is incomplete or corrupted."
+    });
+  }
+
+  const hasValidGps = typeof record.lat === "number" && !isNaN(record.lat) && typeof record.lng === "number" && !isNaN(record.lng) && record.lat !== 0 && record.lng !== 0;
+  const hasPolygon = Boolean(hasValidGps && Array.isArray(record.boundaryCoordinates) && record.boundaryCoordinates.length >= 3);
+
+  res.json({
+    found: true,
+    policyNumber: record.policyNumber,
+    farmer: {
+      id: record.farmerId,
+      name: record.farmerName,
+      phone: record.phone,
+      village: record.village || "Not available",
+      district: record.district || "Not available",
+      state: record.state || "Not available",
+      aadhaar: record.aadhaar || "Not available",
+      aadhaarVerified: Boolean(record.aadhaarVerified),
+      aadhaarVerificationStatus: record.aadhaarVerificationStatus || (record.aadhaarVerified ? "Demo Verified (Synthetic Sandbox)" : "Pending Verification"),
+      landRecordsVerified: Boolean(record.landRecordsVerified),
+      landRecordsVerificationStatus: record.landRecordsVerificationStatus || (record.landRecordsVerified ? "Demo Verified (State Portal Sandbox)" : "Pending Verification"),
+      isDemoRecord: Boolean(record.isDemoRecord)
+    },
+    land: {
+      surveyNumber: record.surveyNumber || "Not available",
+      khasraNumber: record.khasraNumber || "Not available",
+      crop: record.crop || "Not available",
+      season: record.season || "Kharif 2026",
+      area: record.plotSize || "Not available",
+      sumInsured: record.sumInsured ? `₹${record.sumInsured.toLocaleString("en-IN")}` : "Not available",
+      sumInsuredRate: record.sumInsuredRate || "Not available",
+      village: record.village || "Not available",
+      district: record.district || "Not available",
+      state: record.state || "Not available",
+      lat: hasValidGps ? record.lat : null,
+      lng: hasValidGps ? record.lng : null,
+      gpsAccuracyMeters: record.gpsAccuracyMeters || 3.2,
+      boundaryCoordinates: hasPolygon ? record.boundaryCoordinates : null,
+      hasBoundaryPolygon: hasPolygon,
+      hasGpsLocation: hasValidGps
+    },
+    source: record.source || "Database Record"
+  });
+});
+
+// Import policy and cadastral records dynamically
+app.post("/api/policies/import", (req, res) => {
+  const { policies, sourceName } = req.body;
+  if (!Array.isArray(policies) || policies.length === 0) {
+    return res.status(400).json({
+      error: "Import payload must contain a non-empty 'policies' array."
+    });
+  }
+
+  const result = dataStore.importPolicies(policies, sourceName || "Direct API Import");
+  res.json({
+    success: true,
+    message: `Successfully indexed ${result.imported} new and ${result.updated} updated policy record(s).`,
+    ...result
+  });
+});
+
+// List all registered policies (optionally filtered by query)
+app.get("/api/policies", (req, res) => {
+  const q = typeof req.query.search === "string" ? req.query.search.toLowerCase() : "";
+  const allPolicies = dataStore.getPolicies();
+  if (!q) {
+    return res.json(allPolicies);
+  }
+  const filtered = allPolicies.filter(
+    (p) =>
+      p.policyNumber.toLowerCase().includes(q) ||
+      p.farmerName.toLowerCase().includes(q) ||
+      p.surveyNumber.toLowerCase().includes(q) ||
+      p.village.toLowerCase().includes(q)
+  );
+  res.json(filtered);
 });
 
 // ==========================================
@@ -563,7 +742,13 @@ app.post(
       }
 
       // Validate slots 1 to 5
-      const slotNumbers = photos.map((p: any) => Number(p.slotNumber));
+      const slotNumbers = photos.map((p: any) =>
+        Number(
+          p.slotNumber !== undefined && p.slotNumber !== null
+            ? p.slotNumber
+            : p.id,
+        ),
+      );
       const missingSlots = [1, 2, 3, 4, 5].filter(
         (s) => !slotNumbers.includes(s),
       );

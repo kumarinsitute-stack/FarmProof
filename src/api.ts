@@ -1,4 +1,4 @@
-import { User, Claim, AppNotification } from './types';
+import { User, Claim, AppNotification, VerifiedPolicyDossier } from './types';
 
 const TOKEN_KEY = 'farmproof_auth_token';
 
@@ -296,5 +296,15 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
+  },
+
+  async verifyPolicy(policyNumber: string): Promise<VerifiedPolicyDossier> {
+    const clean = encodeURIComponent(policyNumber.trim());
+    const res = await fetch(`/api/policies/verify?policyNumber=${clean}`);
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Policy verification failed');
+    }
+    return data;
   }
 };

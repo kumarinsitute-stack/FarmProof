@@ -51,6 +51,27 @@ export const translations = {
     bankAccountLabel: "Seeded Bank Account",
     bankBranchLabel: "Bank & Branch",
     landAreaLabel: "Insured Area",
+    cropSeasonLabel: "Crop Season",
+    villageLocationLabel: "Village & Location",
+    verifyingPolicyText: "Verifying policy with database...",
+    policyFoundSuccess: "Policy Verified: Matched active PMFBY policy record.",
+    policyNotFound: "Policy Not Found",
+    policyNotFoundDesc: "No active PMFBY policy matches the entered number. Please verify and try again.",
+    quickTestLabel: "Quick Test Demo Policies:",
+    notAvailable: "Not available",
+    boundaryDigitizedTag: "Boundary: Digitized Polygon Available",
+    boundaryUnavailableTag: "Boundary: Polygon Unavailable (Point GPS Only)",
+    boundaryUnsurveyedTag: "Boundary: Unsurveyed (No Coordinates)",
+    demoNotice: "Demo Record: Simulated sandbox validation (Synthetic).",
+    realVerifiedNotice: "Government Verified: Connected to official land records registry.",
+    clearSearchBtn: "Clear Search",
+    searchFieldEmptyError: "Please enter a PMFBY policy number to verify.",
+    aadhaarDemoVerified: "Aadhaar: Demo Verified (Simulated UIDAI)",
+    aadhaarRealVerified: "Aadhaar: UIDAI Verified",
+    aadhaarPending: "Aadhaar: Verification Pending",
+    landDemoVerified: "Land Cadastre: Demo Verified (State Portal Sandbox)",
+    landRealVerified: "Land Records: Verified (CCLA Record)",
+    landPending: "Land Records: Verification Pending",
 
     // Three Main Portals / Action Cards
     launchFarmer: "Lodge Crop Loss Claim (72h Window)",
@@ -166,7 +187,82 @@ export const translations = {
     flagVisitBtn: "Schedule Field Survey",
     rejectBtn: "Reject Intimation",
     payoutDisbursedSuccess: "₹42,500 DBT Payout Authorized to Beneficiary Bank Account",
-    visitScheduledNotice: "Physical field verification assigned to Mandal Agricultural Extension Officer"
+    visitScheduledNotice: "Physical field verification assigned to Mandal Agricultural Extension Officer",
+
+    // Demo Account Cards & Login
+    exploreDemoFarmer: "Explore as Demo Farmer",
+    demoFarmerBadge: "Demo Farmer Account",
+    demoFarmerDesc: "Click to automatically fill demo login credentials and explore the Farmer Portal.",
+    useDemoAccount: "Use Demo Account",
+
+    // Compact Demo Farmer Account Selector
+    exploreDemoFarmersHeading: "Explore Demo Farmer Accounts",
+    demoFarmersBadge: "5 Accounts",
+    demoFarmersDesc: "Choose a sample farmer to explore different claim stages.",
+    viewAllAccounts: "View all 5 accounts",
+    showLessAccounts: "Show less",
+    useAccountAction: "Use Account",
+    demoSelectedConfirmation: "Selected {name} ({claimId}). Click login above.",
+
+    // Claim Stage Status Labels
+    statusSurveyCompleted: "Survey Completed",
+    statusSurveyAssigned: "Survey Assigned",
+    statusUnderReview: "Under Review",
+    statusDisbursed: "DBT Disbursed",
+    statusApproved: "Approved",
+
+    // Compact Demo Staff Account Selector
+    exploreDemoStaffHeading: "Explore Demo Staff Accounts",
+    demoStaffBadge: "2 Accounts",
+    demoStaffDesc: "Choose an administrative role to explore officer or field surveyor workflows.",
+    demoStaffSelectedConfirmation: "Selected {name} ({role}). Click authenticate above.",
+
+    exploreDemoOfficer: "Explore as Demo Officer",
+    demoOfficerBadge: "Demo Officer Account",
+    demoOfficerDesc: "Click to automatically fill demo staff credentials and explore the administrative dashboard.",
+
+    exploreDemoSurveyor: "Explore as Demo Surveyor",
+    demoSurveyorBadge: "Demo Surveyor Account",
+    demoSurveyorDesc: "Click to automatically fill demo staff credentials and explore the surveyor dashboard.",
+
+    demoSelectedNotice: "Demo credentials applied. Click the login button above to authenticate.",
+    demoAccountActive: "Selected",
+
+    // Farmer Login Page Texts
+    farmerPortalTag: "PMFBY Farmer Service Portal",
+    farmerLoginHeader: "Kisan Portal: Claim Submission & Tracking",
+    farmerLoginSub: "Direct access for insured farmers under Pradhan Mantri Fasal Bima Yojana",
+    farmerTabLogin: "Farmer Login",
+    farmerTabRegister: "New Farmer Registration",
+    passwordLoginTab: "Password Login",
+    otpLoginTab: "Secure OTP Login",
+    farmerIdentifierLabel: "Registered Mobile Number or Aadhaar",
+    mobileSubtitle: "10-digit Mobile",
+    farmerIdentifierPlaceholder: "Enter registered mobile number",
+    accountPasswordLabel: "Account Password",
+    forgotPasswordLink: "Forgot password?",
+    passwordPlaceholder: "Enter your password",
+    enterOtpLabel: "Enter 6-Digit OTP",
+    otpPlaceholder: "Enter 6-digit OTP code",
+    otpNoticeText: "A one-time OTP will be generated to verify your PMFBY registered phone.",
+    loginFarmerBtn: "Login to Farmer Portal",
+    requestOtpBtn: "Request Kisan OTP",
+    verifyingFarmerAccount: "Verifying Farmer Account...",
+    switchToStaffQuestion: "Are you a Government Agricultural Officer or Field Surveyor?",
+    switchToStaffSub: "Authorized personnel must access through the dedicated Staff Portal.",
+    switchToStaffBtn: "Staff Login Portal",
+
+    // Staff Login Page Texts
+    staffGovtBadge: "Authorized Government Personnel Only",
+    staffLoginHeader: "Officer & Surveyor Administrative Access",
+    staffLoginSub: "Pradhan Mantri Fasal Bima Yojana • Verification & Sanction Portal",
+    staffSecurityNotice: "Access to this system is restricted to authorized Agricultural Officers and Cadastral Field Surveyors. Role privileges are cryptographically validated by the server.",
+    staffIdentifierLabel: "Official Staff Email or Government ID",
+    staffIdentifierPlaceholder: "Enter official email or government ID",
+    securityPasswordLabel: "Security Password",
+    authenticateStaffBtn: "Authenticate & Open Staff Dashboard",
+    verifyingStaff: "Verifying Credentials & Role Permissions...",
+    switchToFarmerPrompt: "Are you a Farmer? Go to Farmer Login Portal"
   },
 
   HI: {
@@ -221,6 +317,27 @@ export const translations = {
     bankAccountLabel: "जुड़ा हुआ बैंक खाता",
     bankBranchLabel: "बैंक एवं शाखा",
     landAreaLabel: "बीमाकृत रकबा",
+    cropSeasonLabel: "फसल सत्र",
+    villageLocationLabel: "ग्राम एवं स्थान",
+    verifyingPolicyText: "डेटाबेस में पॉलिसी का सत्यापन हो रहा है...",
+    policyFoundSuccess: "पॉलिसी सत्यापित: सक्रिय पीएमएफबीवाई रिकॉर्ड मिल गया।",
+    policyNotFound: "पॉलिसी नहीं मिली",
+    policyNotFoundDesc: "दर्ज की गई संख्या से कोई सक्रिय पॉलिसी मेल नहीं खाती। कृपया जांच कर पुनः प्रयास करें।",
+    quickTestLabel: "त्वरित परीक्षण डेमो नीतियां:",
+    notAvailable: "उपलब्ध नहीं",
+    boundaryDigitizedTag: "सीमा: डिजिटाइज़्ड बहुभुज उपलब्ध",
+    boundaryUnavailableTag: "सीमा: बहुभुज अनुपलब्ध (केवल बिंदु जीपीएस)",
+    boundaryUnsurveyedTag: "सीमा: असर्वेक्षित (कोई निर्देशांक नहीं)",
+    demoNotice: "डेमो रिकॉर्ड: सिमुलेटेड सैंडबॉक्स सत्यापन (सिंथेटिक)।",
+    realVerifiedNotice: "सरकारी सत्यापित: आधिकारिक भूमि रिकॉर्ड रजिस्ट्री से जुड़ा।",
+    clearSearchBtn: "खोज हटाएं",
+    searchFieldEmptyError: "कृपया सत्यापन के लिए एक पीएमएफबीवाई पॉलिसी संख्या दर्ज करें।",
+    aadhaarDemoVerified: "आधार: डेमो सत्यापित (सिमुलेटेड यूआईडीएआई)",
+    aadhaarRealVerified: "आधार: यूआईडीएआई सत्यापित",
+    aadhaarPending: "आधार: सत्यापन लंबित",
+    landDemoVerified: "भू-अभिलेख: डेमो सत्यापित (राज्य सैंडबॉक्स)",
+    landRealVerified: "भू-अभिलेख: सत्यापित (सीसीएलए रिकॉर्ड)",
+    landPending: "भू-अभिलेख: सत्यापन लंबित",
 
     // Three Main Portals / Action Cards
     launchFarmer: "फसल नुकसान का दावा दर्ज करें (72 घंटे)",
@@ -336,7 +453,82 @@ export const translations = {
     flagVisitBtn: "खेत निरीक्षण तय करें",
     rejectBtn: "दावा अस्वीकार करें",
     payoutDisbursedSuccess: "लाभार्थी के बैंक खाते में ₹42,500 डीबीटी भुगतान स्वीकृत किया गया",
-    visitScheduledNotice: "मंडल कृषि विस्तार अधिकारी को भौतिक खेत निरीक्षण सौंपा गया"
+    visitScheduledNotice: "मंडल कृषि विस्तार अधिकारी को भौतिक खेत निरीक्षण सौंपा गया",
+
+    // Demo Account Cards & Login
+    exploreDemoFarmer: "डेमो किसान के रूप में देखें",
+    demoFarmerBadge: "डेमो किसान खाता",
+    demoFarmerDesc: "डेमो लॉगिन विवरण स्वतः भरने और किसान पोर्टल देखने के लिए क्लिक करें।",
+    useDemoAccount: "डेमो खाता उपयोग करें",
+
+    // Compact Demo Farmer Account Selector
+    exploreDemoFarmersHeading: "डेमो किसान खाते देखें",
+    demoFarmersBadge: "5 खाते",
+    demoFarmersDesc: "विभिन्न दावा चरणों को देखने के लिए एक किसान खाता चुनें।",
+    viewAllAccounts: "सभी 5 खाते देखें",
+    showLessAccounts: "कम दिखाएं",
+    useAccountAction: "खाता चुनें",
+    demoSelectedConfirmation: "{name} ({claimId}) चुना गया। ऊपर लॉगिन करें।",
+
+    // Claim Stage Status Labels
+    statusSurveyCompleted: "सर्वेक्षण पूर्ण",
+    statusSurveyAssigned: "सर्वेक्षक नियुक्त",
+    statusUnderReview: "समीक्षाधीन",
+    statusDisbursed: "डीबीटी हस्तांतरित",
+    statusApproved: "स्वीकृत",
+
+    // Compact Demo Staff Account Selector
+    exploreDemoStaffHeading: "डेमो स्टाफ खाते देखें",
+    demoStaffBadge: "2 खाते",
+    demoStaffDesc: "अधिकारी या सर्वेक्षक कार्यप्रवाह देखने के लिए प्रशासनिक भूमिका चुनें।",
+    demoStaffSelectedConfirmation: "{name} ({role}) चुना गया। ऊपर प्रमाणित करें।",
+
+    exploreDemoOfficer: "डेमो अधिकारी के रूप में देखें",
+    demoOfficerBadge: "डेमो अधिकारी खाता",
+    demoOfficerDesc: "डेमो अधिकारी विवरण स्वतः भरने और प्रशासनिक डैशबोर्ड देखने के लिए क्लिक करें।",
+
+    exploreDemoSurveyor: "डेमो सर्वेक्षक के रूप में देखें",
+    demoSurveyorBadge: "डेमो सर्वेक्षक खाता",
+    demoSurveyorDesc: "डेमो सर्वेक्षक विवरण स्वतः भरने और क्षेत्रीय सत्यापन पोर्टल देखने के लिए क्लिक करें।",
+
+    demoSelectedNotice: "डेमो क्रेडेंशियल लागू किए गए। लॉगिन करने के लिए ऊपर दिए गए बटन पर क्लिक करें।",
+    demoAccountActive: "चयनित",
+
+    // Farmer Login Page Texts
+    farmerPortalTag: "पीएमएफबीवाई किसान सेवा पोर्टल",
+    farmerLoginHeader: "किसान पोर्टल: दावा प्रस्तुति एवं ट्रैकिंग",
+    farmerLoginSub: "प्रधानमंत्री फसल बीमा योजना के तहत बीमित किसानों के लिए सीधी सुविधा",
+    farmerTabLogin: "किसान लॉगिन",
+    farmerTabRegister: "नया किसान पंजीकरण",
+    passwordLoginTab: "पासवर्ड लॉगिन",
+    otpLoginTab: "सुरक्षित ओटीपी लॉगिन",
+    farmerIdentifierLabel: "पंजीकृत मोबाइल नंबर या आधार",
+    mobileSubtitle: "10-अंकीय मोबाइल",
+    farmerIdentifierPlaceholder: "पंजीकृत मोबाइल नंबर दर्ज करें",
+    accountPasswordLabel: "खाता पासवर्ड",
+    forgotPasswordLink: "पासवर्ड भूल गए?",
+    passwordPlaceholder: "अपना पासवर्ड दर्ज करें",
+    enterOtpLabel: "6-अंकीय ओटीपी दर्ज करें",
+    otpPlaceholder: "6-अंकीय ओटीपी कोड दर्ज करें",
+    otpNoticeText: "आपके पीएमएफबीवाई पंजीकृत फोन को सत्यापित करने के लिए एक ओटीपी भेजा जाएगा।",
+    loginFarmerBtn: "किसान पोर्टल में लॉगिन करें",
+    requestOtpBtn: "किसान ओटीपी का अनुरोध करें",
+    verifyingFarmerAccount: "किसान खाता सत्यापित किया जा रहा है...",
+    switchToStaffQuestion: "क्या आप सरकारी कृषि अधिकारी या फील्ड सर्वेक्षक हैं?",
+    switchToStaffSub: "अधिकृत कर्मियों को समर्पित स्टाफ पोर्टल के माध्यम से प्रवेश करना होगा।",
+    switchToStaffBtn: "स्टाफ लॉगिन पोर्टल",
+
+    // Staff Login Page Texts
+    staffGovtBadge: "केवल अधिकृत सरकारी कर्मचारी",
+    staffLoginHeader: "अधिकारी एवं सर्वेक्षक प्रशासनिक प्रवेश",
+    staffLoginSub: "प्रधानमंत्री फसल बीमा योजना • सत्यापन एवं स्वीकृति पोर्टल",
+    staffSecurityNotice: "इस प्रणाली तक पहुंच केवल अधिकृत कृषि अधिकारियों और कैडस्ट्रल फील्ड सर्वेक्षकों तक सीमित है। विशेषाधिकार सर्वर द्वारा मान्य किए जाते हैं।",
+    staffIdentifierLabel: "आधिकारिक स्टाफ ईमेल या सरकारी आईडी",
+    staffIdentifierPlaceholder: "आधिकारिक ईमेल या सरकारी आईडी दर्ज करें",
+    securityPasswordLabel: "सुरक्षा पासवर्ड",
+    authenticateStaffBtn: "प्रमाणित करें और स्टाफ डैशबोर्ड खोलें",
+    verifyingStaff: "क्रेडेंशियल एवं अनुमति सत्यापित की जा रही है...",
+    switchToFarmerPrompt: "क्या आप किसान हैं? किसान लॉगिन पोर्टल पर जाएं"
   },
 
   TE: {
@@ -391,6 +583,27 @@ export const translations = {
     bankAccountLabel: "అనుసంధానమైన బ్యాంక్ ఖాతా",
     bankBranchLabel: "బ్యాంకు మరియు బ్రాంచ్",
     landAreaLabel: "బీమా చేసిన విస్తీర్ణం",
+    cropSeasonLabel: "పంట కాలం / సీజన్",
+    villageLocationLabel: "గ్రామం మరియు ప్రదేశం",
+    verifyingPolicyText: "డేటాబేస్‌లో పాలసీ వివరాలు ధృవీకరించబడుతున్నాయి...",
+    policyFoundSuccess: "పాలసీ ధృవీకరించబడింది: క్రియాశీల PMFBY రికార్డు కనుగొనబడింది.",
+    policyNotFound: "పాలసీ కనుగొనబడలేదు",
+    policyNotFoundDesc: "నమోదు చేసిన నంబర్‌తో ఏ క్రియాశీల PMFBY పాలసీ సరిపోలలేదు. దయచేసి ధృవీకరించి మళ్లీ ప్రయత్నించండి.",
+    quickTestLabel: "డెమో పాలసీల నమూనాలు:",
+    notAvailable: "అందుబాటులో లేదు",
+    boundaryDigitizedTag: "సరిహద్దు: డిజిటలైజ్డ్ పాలిగాన్ అందుబాటులో ఉంది",
+    boundaryUnavailableTag: "సరిహద్దు: పాలిగాన్ అందుబాటులో లేదు (పాయింట్ GPS మాత్రమే)",
+    boundaryUnsurveyedTag: "సరిహద్దు: సర్వే చేయబడలేదు (కోఆర్డినేట్లు లేవు)",
+    demoNotice: "డెమో రికార్డు: సిమ్యులేట్ చేయబడిన శాండ్‌బాక్స్ ధృవీకరణ.",
+    realVerifiedNotice: "ప్రభుత్వ ధృవీకరణ: అధికారిక రెవెన్యూ రికార్డులతో అనుసంధానించబడింది.",
+    clearSearchBtn: "శోధనను క్లియర్ చేయండి",
+    searchFieldEmptyError: "దయచేసి ధృవీకరించడానికి PMFBY పాలసీ నంబర్‌ను నమోదు చేయండి.",
+    aadhaarDemoVerified: "ఆధార్: డెమో ధృవీకరించబడింది (సిమ్యులేటెడ్ UIDAI)",
+    aadhaarRealVerified: "ఆధార్: UIDAI ధృవీకరించబడింది",
+    aadhaarPending: "ఆధార్: ధృవీకరణ పెండింగ్‌లో ఉంది",
+    landDemoVerified: "భూమి రికార్డులు: డెమో ధృవీకరించబడింది (రాష్ట్ర శాండ్‌బాక్స్)",
+    landRealVerified: "భూమి రికార్డులు: ధృవీకరించబడింది (CCLA రికార్డు)",
+    landPending: "భూమి రికార్డులు: ధృవీకరణ పెండింగ్‌లో ఉంది",
 
     // Three Main Portals / Action Cards
     launchFarmer: "పంట నష్ట దరఖాస్తు నమోదు చేయండి (72 గంటలు)",
@@ -506,6 +719,81 @@ export const translations = {
     flagVisitBtn: "క్షేత్ర తనిఖీ షెడ్యూల్ చేయండి",
     rejectBtn: "క్లెయిమ్ తిరస్కరించండి",
     payoutDisbursedSuccess: "రైతు బ్యాంకు ఖాతాకు ₹42,500 DBT పరిహారం విజయవంతంగా ఆమోదించబడింది",
-    visitScheduledNotice: "క్షేత్ర తనిఖీ మండల వ్యవసాయ విస్తరణ అధికారికి కేటాయించబడింది"
+    visitScheduledNotice: "క్షేత్ర తనిఖీ మండల వ్యవసాయ విస్తరణ అధికారికి కేటాయించబడింది",
+
+    // Demo Account Cards & Login
+    exploreDemoFarmer: "డెమో రైతుగా అన్వేషించండి",
+    demoFarmerBadge: "డెమో రైతు ఖాతా",
+    demoFarmerDesc: "డెమో లాగిన్ వివరాలను స్వయంచాలకంగా పూరించడానికి మరియు రైతు పోర్టల్‌ను అన్వేషించడానికి క్లిక్ చేయండి.",
+    useDemoAccount: "డెమో ఖాతాను ఉపయోగించండి",
+
+    // Compact Demo Farmer Account Selector
+    exploreDemoFarmersHeading: "డెమో రైతు ఖాతాలను అన్వేషించండి",
+    demoFarmersBadge: "5 ఖాతాలు",
+    demoFarmersDesc: "వివిధ క్లెయిమ్ దశలను అన్వేషించడానికి ఒక నమూనా రైతును ఎంచుకోండి.",
+    viewAllAccounts: "అన్ని 5 ఖాతాలను చూడండి",
+    showLessAccounts: "తక్కువ చూపించు",
+    useAccountAction: "ఖాతాను వాడండి",
+    demoSelectedConfirmation: "{name} ({claimId}) ఎంపిక చేయబడింది. పైన లాగిన్ క్లిక్ చేయండి.",
+
+    // Claim Stage Status Labels
+    statusSurveyCompleted: "సర్వే పూర్తయింది",
+    statusSurveyAssigned: "సర్వే కేటాయించబడింది",
+    statusUnderReview: "సమీక్షలో ఉంది",
+    statusDisbursed: "DBT జమ చేయబడింది",
+    statusApproved: "ఆమోదించబడింది",
+
+    // Compact Demo Staff Account Selector
+    exploreDemoStaffHeading: "డెమో సిబ్బంది ఖాతాలను అన్వేషించండి",
+    demoStaffBadge: "2 ఖాతాలు",
+    demoStaffDesc: "అధికారి లేదా సర్వేయర్ పనితీరును అన్వేషించడానికి పరిపాలనా పాత్రను ఎంచుకోండి.",
+    demoStaffSelectedConfirmation: "{name} ({role}) ఎంపిక చేయబడింది. పైన ధృవీకరించండి.",
+
+    exploreDemoOfficer: "డెమో అధికారిగా అన్వేషించండి",
+    demoOfficerBadge: "డెమో అధికారి ఖాతా",
+    demoOfficerDesc: "డెమో సిబ్బంది వివరాలను స్వయంచాలకంగా పూరించడానికి మరియు పరిపాలనా డ్యాష్‌బోర్డ్‌ను అన్వేషించడానికి క్లిక్ చేయండి.",
+
+    exploreDemoSurveyor: "డెమో సర్వేయర్‌గా అన్వేషించండి",
+    demoSurveyorBadge: "డెమో సర్వేయర్ ఖాతా",
+    demoSurveyorDesc: "డెమో సర్వేయర్ వివరాలను స్వయంచాలకంగా పూరించడానికి మరియు క్షేత్ర స్థాయి తనిఖీ పోర్టల్‌ను అన్వేషించడానికి క్లిక్ చేయండి.",
+
+    demoSelectedNotice: "డెమో ఆధారాలు పూరించబడ్డాయి. లాగిన్ చేయడానికి పై బటన్‌ను క్లిక్ చేయండి.",
+    demoAccountActive: "ఎంపిక చేయబడింది",
+
+    // Farmer Login Page Texts
+    farmerPortalTag: "PMFBY రైతు సేవా పోర్టల్",
+    farmerLoginHeader: "కిసాన్ పోర్టల్: క్లెయిమ్ నమోదు & ట్రాకింగ్",
+    farmerLoginSub: "ప్రధాన మంత్రి ఫసల్ బీమా యోజన క్రింద బీమా పొందిన రైతులకు ప్రత్యక్ష ప్రాప్యత",
+    farmerTabLogin: "రైతు లాగిన్",
+    farmerTabRegister: "నూతన రైతు నమోదు",
+    passwordLoginTab: "పాస్‌వర్డ్ లాగిన్",
+    otpLoginTab: "సురక్షిత OTP లాగిన్",
+    farmerIdentifierLabel: "నమోదిత మొబైల్ నంబర్ లేదా ఆధార్",
+    mobileSubtitle: "10-అంకెల మొబైల్",
+    farmerIdentifierPlaceholder: "నమోదిత మొబైల్ నంబర్‌ను నమోదు చేయండి",
+    accountPasswordLabel: "ఖాతా పాస్‌వర్డ్",
+    forgotPasswordLink: "పాస్‌వర్డ్ మర్చిపోయారా?",
+    passwordPlaceholder: "మీ పాస్‌వర్డ్‌ను నమోదు చేయండి",
+    enterOtpLabel: "6-అంకెల OTPని నమోదు చేయండి",
+    otpPlaceholder: "6-అంకెల OTP కోడ్‌ను నమోదు చేయండి",
+    otpNoticeText: "మీ PMFBY నమోదిత ఫోన్‌ను ధృవీకరించడానికి ఒకేసారి OTP రూపొందించబడుతుంది.",
+    loginFarmerBtn: "రైతు పోర్టల్‌కు లాగిన్ చేయండి",
+    requestOtpBtn: "కిసాన్ OTPని అభ్యర్థించండి",
+    verifyingFarmerAccount: "రైతు ఖాతాను ధృవీకరిస్తోంది...",
+    switchToStaffQuestion: "మీరు ప్రభుత్వ వ్యవసాయ అధికారినా లేక ఫీల్డ్ సర్వేయరా?",
+    switchToStaffSub: "అధికారిక సిబ్బంది ప్రత్యేక స్టాఫ్ పోర్టల్ ద్వారా మాత్రమే ప్రవేశించాలి.",
+    switchToStaffBtn: "స్టాఫ్ లాగిన్ పోర్టల్",
+
+    // Staff Login Page Texts
+    staffGovtBadge: "అధికారిక ప్రభుత్వ సిబ్బందికి మాత్రమే",
+    staffLoginHeader: "అధికారి & సర్వేయర్ పరిపాలనా ప్రాప్యత",
+    staffLoginSub: "ప్రధాన మంత్రి ఫసల్ బీమా యోజన • ధృవీకరణ & ఆమోద పోర్టల్",
+    staffSecurityNotice: "ఈ వ్యవస్థ ప్రాప్యత అధీకృత వ్యవసాయ అధికారులు మరియు కాడాస్ట్రల్ ఫీల్డ్ సర్వేయర్లకు మాత్రమే పరిమితం. అధికారాలు సర్వర్ ద్వారా ధృవీకరించబడతాయి.",
+    staffIdentifierLabel: "అధికారిక స్టాఫ్ ఇమెయిల్ లేదా ప్రభుత్వ ID",
+    staffIdentifierPlaceholder: "అధికారిక ఇమెయిల్ లేదా ప్రభుత్వ IDని నమోదు చేయండి",
+    securityPasswordLabel: "భద్రతా పాస్‌వర్డ్",
+    authenticateStaffBtn: "ధృవీకరించి స్టాఫ్ డ్యాష్‌బోర్డ్ తెరవండి",
+    verifyingStaff: "వివరాలు మరియు అనుమతులను ధృవీకరిస్తోంది...",
+    switchToFarmerPrompt: "మీరు రైతులా? రైతు లాగిన్ పోర్టల్‌కు వెళ్లండి"
   }
 };
